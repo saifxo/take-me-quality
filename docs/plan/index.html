@@ -110,7 +110,7 @@
         <thead><tr><th>Portal column</th><th>Example (made up)</th><th>What we keep</th></tr></thead>
         <tbody>
           <tr><td>Context</td><td class="mono">Queue / Exten</td><td>Queue calls are customer calls. Exten rows are agent-to-agent calls, skipped by default.</td></tr>
-          <tr><td>Destination</td><td class="mono">561 / 1465 - Sarah Patel - SOL - DE</td><td>Queue, extension, agent, site code and team code. The agent naming convention is <code>Name - SITE - TEAM</code>.</td></tr>
+          <tr><td>Destination</td><td class="mono">901 / 8101 - Demo Ava Stone - DMN - D1</td><td>Queue, extension, agent, site code and team code. The agent naming convention is <code>Name - SITE - TEAM</code>.</td></tr>
           <tr><td>Origination</td><td class="mono">07700 900123</td><td>Caller number, <strong>masked on entry</strong> (e.g. <code>077•• •••123</code>).</td></tr>
           <tr><td>Date Time</td><td class="mono">2026-08-31 02:12:07</td><td>Call time, which also decides the reporting week (w/c Monday).</td></tr>
           <tr><td>Duration</td><td class="mono">00:01:25</td><td>Handling time, which feeds the Avg AHT column the sheet never managed to fill.</td></tr>
@@ -301,10 +301,10 @@
       <figure>
         <div class="fig-body paste">
           <label class="eyebrow" for="paste-in">Smart paste · edit these example rows</label>
-          <textarea id="paste-in" spellcheck="false">Queue	561 / 1465 - Omar Siddiqui - BIRPK - BE	07700900123	2026-08-31 02:12:07	00:01:25	» Play « » Download « » Email «
-Queue	557 / 1472 - Sarah Patel - SOL - DE	07700900456	2026-08-31 02:28:43	00:02:46	» Play « » Download « » Email «
-Queue	551 / 1480 - Dan Carter - NUN - DE	07700900789	2026-09-01 14:05:10	00:03:12	» Play « » Download « » Email «
-Exten	James Ellis - BIR - BE	Omar Siddiqui - BIRPK - BE	2026-08-31 02:57:57	00:00:10	» Play « » Download « » Email «</textarea>
+          <textarea id="paste-in" spellcheck="false">Queue	901 / 8301 - Demo Zoe Fields - DMS - D1	07700900123	2026-08-31 02:12:07	00:01:25	» Play « » Download « » Email «
+Queue	902 / 8101 - Demo Ava Stone - DMN - D1	07700900456	2026-08-31 02:28:43	00:02:46	» Play « » Download « » Email «
+Queue	903 / 8302 - Demo Max Hill - DMS - D2	07700900789	2026-09-01 14:05:10	00:03:12	» Play « » Download « » Email «
+Exten	Demo Ivy Lake - DMC - D1	Demo Max Hill - DMS - D2	2026-08-31 02:57:57	00:00:10	» Play « » Download « » Email «</textarea>
           <div class="tbl-wrap" style="margin:0"><table>
             <thead><tr><th class="num">#</th><th>Agent</th><th>Site</th><th>Caller</th><th>Call time</th><th class="num">Duration</th><th>Status</th></tr></thead>
             <tbody id="paste-out"><tr><td colspan="7" class="muted">Parsing…</td></tr></tbody>

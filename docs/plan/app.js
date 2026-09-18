@@ -149,7 +149,7 @@
 
   // ---- Smart paste: parse rows copied from the call-recordings portal ------------
   var SITES = { SOL: "Solihull", BIR: "Birmingham", BIRPK: "Birmingham · PK", NUN: "Nuneaton", GB: "Great Barr" };
-  var ROSTER = ["Omar Siddiqui", "Sarah Patel", "James Ellis"];
+  var ROSTER = ["Demo Ava Stone", "Demo Ivy Lake", "Demo Max Hill"];
   var RE = /^\s*(Queue|Exten)\s+(?:(\d+)\s*\/\s*(\d+)\s*-\s*)?(.+?)\s+-\s+([A-Z]{2,6})\s+-\s+([A-Z]{1,4})\s+(.+?)\s+(\d{4})-(\d{2})-(\d{2})\s+(\d{2}):(\d{2}):\d{2}\s+(\d{2}):(\d{2}):(\d{2})/;
 
   function mask(num) {

@@ -17,7 +17,7 @@
                     "db:seed:sample":  "tsx scripts/seed.ts --sample",
                     "db:reset":  "tsx scripts/reset-db.ts \u0026\u0026 drizzle-kit migrate \u0026\u0026 tsx scripts/seed.ts --sample",
                     "db:studio":  "drizzle-kit studio",
-                    "vercel-build":  "drizzle-kit migrate \u0026\u0026 next build",
+                    "vercel-build":  "drizzle-kit migrate \u0026\u0026 tsx scripts/seed.ts --sample \u0026\u0026 next build",
                     "ai:check":  "tsx scripts/ai-check.ts"
                 },
     "dependencies":  {

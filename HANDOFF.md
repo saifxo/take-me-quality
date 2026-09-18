@@ -35,7 +35,7 @@ npm run db:seed:sample   # framework + sites + admin + sample roster and 13 week
 npm run dev              # http://localhost:3000
 ```
 
-Sign in as `admin@takeme.taxi` with the `SEED_ADMIN_PASSWORD` from `.env.local`.
+Sign in as `demo.admin@takeme.taxi` with the `SEED_ADMIN_PASSWORD` from `.env.local`.
 
 ---
 
@@ -54,7 +54,7 @@ Sign in as `admin@takeme.taxi` with the `SEED_ADMIN_PASSWORD` from `.env.local`.
 | Portal column | Example | What the platform does with it |
 |---|---|---|
 | Context | `Queue` or `Exten` | Queue is a customer call; Exten is an internal agent-to-agent call, skipped by default |
-| Destination | `561 / 1465 - Sarah Patel - SOL - DE` | queue / extension / agent name / site code / team code |
+| Destination | `901 / 8101 - Demo Ava Stone - DMN - D1` | queue / extension / agent name / site code / team code |
 | Origination | `07700900123` | caller number, **masked** to `077•• •••123` before saving |
 | Date Time | `2026-08-31 02:12:07` | call time (UK local), which decides the reporting week |
 | Duration | `00:01:25` | handling time (AHT) |
@@ -71,7 +71,7 @@ Agents are named `Name - SITE - TEAM` in the portal. Site codes seen: SOL (Solih
 | **Print Version** | The same rubric laid out for paper | Print styles and the 1:1 report page |
 | **High Impact Handling Issue Info** | The 11 zero-tolerance issues and what each means | The zero-tolerance panel and settings |
 
-What the file actually contained: 40 evaluations, 4 agents (10 calls each), 3 campaigns, 1 reviewer ("Hassan", stored twice, once with a trailing space), review dates 7 and 14 September 2026, **every call scored 100%**, and Phone, Date and Duration blank on all 40 rows.
+What the file actually contained: 40 evaluations, 4 agents (10 calls each), 3 campaigns, a duplicated reviewer label, two review dates, **every call scored 100%**, and Phone, Date and Duration blank on all 40 rows.
 
 The workbook came from Google Sheets (it has `__xludf.DUMMYFUNCTION` wrappers and the Sheets-only `=AI()` function), so the team already had Gemini available.
 
@@ -394,18 +394,16 @@ If the mode is `ai` and no key is configured, the service throws a clear message
 `npm run db:seed` (safe to re-run) installs:
 
 - **Scorecard version 1** from `src/lib/framework/tmq.ts`: 4 sections, 21 criteria, 11 zero-tolerance issues, and the default settings (KPI above 90%, attention above 15%, weekly target 10 calls, Yes 1 / Partial 0.5 / No 0, score floor 0%, 24-hour reviewer edit window).
-- **Five sites:** Solihull (SOL), Birmingham (BIR), Birmingham PK (BIRPK), Nuneaton (NUN), Great Barr (GBR).
-- **One admin** from `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD` (named "Rachel Moore" in the seed).
+- **Three demo sites:** Demo North (DMN), Demo Central (DMC), and Demo South (DMS).
+- **One admin** from `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD` (named "Demo Hassan Admin" in the seed).
 
 `npm run db:seed:sample` adds, only if there are no evaluations yet:
 
-- **Two reviewer accounts:** `qa@takeme.taxi` and `qa2@takeme.taxi`, password `Reviewer-2026!`. One is deliberately more lenient than the other so reviewer calibration has something to show.
-- **17 fictional agents** across the five sites, each with a skill level and a trend, plus one "pending" agent (Kofi Mensah) waiting for admin confirmation.
-- **About 2,000 evaluations over 13 weeks** (roughly 10 per agent per week), scored by the real engine, with realistic notes, occasional zero-tolerance breaches, a few drafts and queued calls for the current week, and feedback text. Generated from a fixed random seed, so the same data appears every time.
+- **One QA reviewer account:** `demo.qa@takeme.taxi`, password `Demo-QA-2026!`, named "Demo Hassan QA".
+- **Eight clearly labelled demo agents** across the three demo sites, plus one pending demo agent.
+- **About 1,000 fictional evaluations over 13 weeks**, scored by the real engine, with synthetic notes, occasional zero-tolerance breaches, drafts, queued calls and feedback. Generated from a fixed random seed, so the same demo data appears every time.
 
-Counts in the local database at handoff: 2,010 evaluations (2,000 submitted), 42,105 answers, 20 agents, 5 sites, 4 users, 11 saved AI summaries, 29 audit entries. The extra agents and reviews beyond the seed came from manual testing (including the user trying the app).
-
-All sample names are invented. Real names only enter the system if you import a real workbook. For a clean system, run `npm run db:seed` without `:sample` and import from **Import & export**.
+The demo seed contains no agent, caller, reviewer or review data from the workbook. Only the recovered scorecard rules and checks are retained.
 
 ---
 

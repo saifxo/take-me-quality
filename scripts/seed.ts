@@ -25,32 +25,21 @@ import { hashCaller } from "../src/server/crypto";
 const SAMPLE = process.argv.includes("--sample");
 
 const SITES = [
-  { code: "SOL", name: "Solihull" },
-  { code: "BIR", name: "Birmingham" },
-  { code: "BIRPK", name: "Birmingham (PK)" },
-  { code: "NUN", name: "Nuneaton" },
-  { code: "GBR", name: "Great Barr" },
+  { code: "DMN", name: "Demo North" },
+  { code: "DMC", name: "Demo Central" },
+  { code: "DMS", name: "Demo South" },
 ];
 
 // Fictional roster. skill = base chance of missing a criterion; drift = change in that chance per week.
 const ROSTER: { name: string; site: string; team: string; ext: string; skill: number; drift: number; risky?: boolean }[] = [
-  { name: "Sarah Patel", site: "SOL", team: "DE", ext: "1465", skill: 0.03, drift: 0 },
-  { name: "Tom Whitfield", site: "SOL", team: "DE", ext: "1466", skill: 0.1, drift: -0.004 },
-  { name: "Priya Nair", site: "SOL", team: "DE", ext: "1467", skill: 0.05, drift: 0 },
-  { name: "Callum Reid", site: "SOL", team: "DE", ext: "1468", skill: 0.08, drift: 0.005, risky: true },
-  { name: "James Ellis", site: "BIR", team: "BE", ext: "1470", skill: 0.04, drift: 0 },
-  { name: "Hannah Brooks", site: "BIR", team: "BE", ext: "1471", skill: 0.07, drift: -0.002 },
-  { name: "Imran Qureshi", site: "BIR", team: "BE", ext: "1472", skill: 0.12, drift: -0.006 },
-  { name: "Chloe Morgan", site: "BIR", team: "BE", ext: "1473", skill: 0.05, drift: 0.001 },
-  { name: "Omar Siddiqui", site: "BIRPK", team: "BE", ext: "1480", skill: 0.06, drift: -0.002 },
-  { name: "Zainab Hussain", site: "BIRPK", team: "BE", ext: "1481", skill: 0.04, drift: 0 },
-  { name: "Bilal Ahmed", site: "BIRPK", team: "BE", ext: "1482", skill: 0.11, drift: 0.002, risky: true },
-  { name: "Fatima Noor", site: "BIRPK", team: "BE", ext: "1483", skill: 0.05, drift: -0.001 },
-  { name: "Dan Carter", site: "NUN", team: "DE", ext: "1490", skill: 0.06, drift: 0 },
-  { name: "Megan Price", site: "NUN", team: "DE", ext: "1491", skill: 0.09, drift: -0.004 },
-  { name: "Ryan Cooper", site: "NUN", team: "DE", ext: "1492", skill: 0.05, drift: 0.003 },
-  { name: "Aisha Begum", site: "GBR", team: "DE", ext: "1495", skill: 0.04, drift: 0 },
-  { name: "Jack Turner", site: "GBR", team: "DE", ext: "1496", skill: 0.08, drift: 0 },
+  { name: "Demo Ava Stone", site: "DMN", team: "D1", ext: "8101", skill: 0.03, drift: 0 },
+  { name: "Demo Leo Rivers", site: "DMN", team: "D1", ext: "8102", skill: 0.1, drift: -0.004 },
+  { name: "Demo Mia Cloud", site: "DMN", team: "D2", ext: "8103", skill: 0.05, drift: 0 },
+  { name: "Demo Noah Vale", site: "DMC", team: "D1", ext: "8201", skill: 0.08, drift: 0.005, risky: true },
+  { name: "Demo Ivy Lake", site: "DMC", team: "D1", ext: "8202", skill: 0.04, drift: 0 },
+  { name: "Demo Eli Brook", site: "DMC", team: "D2", ext: "8203", skill: 0.07, drift: -0.002 },
+  { name: "Demo Zoe Fields", site: "DMS", team: "D1", ext: "8301", skill: 0.12, drift: -0.006 },
+  { name: "Demo Max Hill", site: "DMS", team: "D2", ext: "8302", skill: 0.05, drift: 0.001 },
 ];
 
 const DIFFICULTY: Record<string, number> = {
@@ -71,11 +60,11 @@ const NOTES: Record<string, string[]> = {
   agent_introduction: ["Name was rushed and hard to catch.", "No name given at the start of the call."],
   clear_enunciation: ["Spoke quickly in the greeting and dropped words.", "Some mumbling during the opening."],
   confirming_names: ["Asked for the name three times.", "Did not confirm the passenger name."],
-  full_address: ["Asked the caller to spell Tesco Extra.", "Did not confirm the house number.", "Asked for the postcode of the train station."],
+  full_address: ["Asked the caller to spell Demo Market.", "Did not confirm the building number.", "Asked for the postcode of Demo Station."],
   commercial_authentication: ["Did not check the account password.", "Skipped the authorised caller check."],
   avoiding_assumptions: ["Assumed an ASAP pickup without asking.", "Assumed the destination from a previous booking."],
   booking_procedures: ["Did not challenge a tight train connection.", "No contact number taken from a withheld caller.", "Did not explain the return trip terms."],
-  airport_details: ["Terminal not confirmed.", "No flight number taken.", "Luggage count not asked."],
+  airport_details: ["Demo Airport terminal not confirmed.", "No fictional flight number taken.", "Luggage count not asked."],
   correct_information: ["Gave two different prices during the call."],
   politeness: ["Tone was flat and transactional.", "Few please or thank yous."],
   professionalism: ["Sounded irritated with a repeat question.", "Said “I don’t know that area”."],
@@ -84,7 +73,7 @@ const NOTES: Record<string, string[]> = {
   engaging: ["Interrupted the caller twice.", "Missed a chance to show empathy about a late driver."],
   eta_handling: ["Promised 5 minutes with no disclaimer.", "Gave a firm ETA on a busy night."],
   call_control: ["Long silences while typing.", "Call drifted and took longer than needed."],
-  no_spelling_known_locations: ["Asked the caller to spell Queen Elizabeth Hospital.", "Asked for the postcode of the Bullring."],
+  no_spelling_known_locations: ["Asked the caller to spell Demo Hospital.", "Asked for the postcode of Demo Shopping Centre."],
   active_listening: ["Asked for the pickup address twice.", "Missed that the caller needed an estate car."],
   confident_closure: ["Did not recap the pickup time.", "No paraphrase of the pickup address at the end."],
   closing_statement: ["Ended with just “okay bye”.", "Line left open after the goodbye."],
@@ -134,11 +123,11 @@ async function ensureBase() {
   }
   console.log(`✓ Sites: ${SITES.map((s) => s.name).join(", ")}`);
 
-  const email = (process.env.SEED_ADMIN_EMAIL || "admin@takeme.taxi").toLowerCase();
-  const password = process.env.SEED_ADMIN_PASSWORD || "TakeMe-Quality-2026!";
+  const email = (process.env.SEED_ADMIN_EMAIL || "demo.admin@takeme.taxi").toLowerCase();
+  const password = process.env.SEED_ADMIN_PASSWORD || "Demo-Admin-2026!";
   const [existing] = await db.select().from(users).where(eq(users.email, email)).limit(1);
   if (!existing) {
-    await db.insert(users).values({ name: "Rachel Moore", email, role: "admin", passwordHash: await hashPassword(password), mustChangePassword: false });
+    await db.insert(users).values({ name: "Demo Hassan Admin", email, role: "admin", passwordHash: await hashPassword(password), mustChangePassword: false });
     console.log(`✓ Admin account: ${email}`);
   } else console.log(`• Admin ${email} already exists`);
 }
@@ -149,12 +138,9 @@ async function seedSample() {
     console.log(`• ${n} evaluations already exist — sample history not added again (run npm run db:reset for a clean slate).`);
     return;
   }
-  const reviewerPassword = "Reviewer-2026!";
+  const reviewerPassword = "Demo-QA-2026!";
   const reviewerHash = await hashPassword(reviewerPassword);
-  const reviewerDefs = [
-    { name: "Ayesha Malik", email: "qa@takeme.taxi", leniency: 1 },
-    { name: "Daniel Hughes", email: "qa2@takeme.taxi", leniency: 0.55 },
-  ];
+  const reviewerDefs = [{ name: "Demo Hassan QA", email: "demo.qa@takeme.taxi", leniency: 0.8 }];
   const reviewers: { id: string; leniency: number }[] = [];
   for (const r of reviewerDefs) {
     const [row] = await db
@@ -165,7 +151,7 @@ async function seedSample() {
     const u = row ?? (await db.select().from(users).where(eq(users.email, r.email)))[0];
     reviewers.push({ id: u.id, leniency: r.leniency });
   }
-  console.log(`✓ Reviewer accounts: qa@takeme.taxi, qa2@takeme.taxi (password ${reviewerPassword})`);
+  console.log(`✓ Reviewer account: demo.qa@takeme.taxi (password ${reviewerPassword})`);
 
   const siteRows = await db.select().from(sites);
   const siteId = (code: string) => siteRows.find((s) => s.code === code)!.id;
@@ -175,7 +161,7 @@ async function seedSample() {
     agentRows.push({ ...a, id: row.id, siteId: row.siteId });
   }
   // One agent a reviewer met in the portal, waiting for an admin to confirm.
-  await db.insert(agents).values({ fullName: "Kofi Mensah", siteId: siteId("BIR"), teamCode: "BE", status: "pending" });
+  await db.insert(agents).values({ fullName: "Demo Pending Agent", siteId: siteId("DMC"), teamCode: "D2", status: "pending" });
   console.log(`✓ ${agentRows.length} agents across ${SITES.length} sites`);
 
   const sc = await getActiveScorecard();
@@ -247,7 +233,7 @@ async function seedSample() {
             callAt,
             callWeek: weekStartOf(callAt),
             durationSec: Math.round(45 + Math.pow(rand(), 1.8) * 360),
-            queue: pick(["551", "557", "561"]),
+            queue: pick(["901", "902", "903"]),
             extension: agent.ext,
             callerMasked: maskPhone(phone),
             callerHash: hashCaller(phone),

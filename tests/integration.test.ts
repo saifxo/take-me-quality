@@ -33,9 +33,9 @@ let qa2: Ctx;
 let solId: string;
 
 const PASTE = [
-  "Queue\t561 / 1465 - Sarah Patel - SOL - DE\t07700900123\t2026-08-31 02:12:07\t00:01:25\t» Play « » Download « » Email «",
+  "Queue\t561 / 1465 - Demo Ava Stone - SOL - DE\t07700900123\t2026-08-31 02:12:07\t00:01:25\t» Play « » Download « » Email «",
   "Queue\t557 / 1466 - New Starter - SOL - DE\t07700900456\t2026-08-31 02:28:43\t00:02:46\t» Play « » Download « » Email «",
-  "Exten\tJames Ellis - BIR - BE\tSarah Patel - SOL - DE\t2026-08-31 02:57:57\t00:00:10\t» Play « » Download « » Email «",
+  "Exten\tDemo Ivy Lake - BIR - BE\tDemo Ava Stone - SOL - DE\t2026-08-31 02:57:57\t00:00:10\t» Play « » Download « » Email «",
 ].join("\n");
 
 async function allYesPayload(evaluationId: string): Promise<ReviewPayload> {
@@ -46,11 +46,11 @@ async function allYesPayload(evaluationId: string): Promise<ReviewPayload> {
 beforeAll(async () => {
   await resetTestDb();
   admin = await makeUser("admin", "admin@test.local");
-  qa = await makeUser("qa", "qa@test.local", "Correct-Horse-42", { name: "Ayesha Malik" });
+  qa = await makeUser("qa", "qa@test.local", "Correct-Horse-42", { name: "Demo Hassan QA" });
   qa2 = await makeUser("qa", "qa2@test.local");
   const [sol] = await db.select().from(sites).where(eq(sites.code, "SOL"));
   solId = sol.id;
-  await db.insert(agents).values({ fullName: "Sarah Patel", siteId: solId, teamCode: "DE", extension: "1465" });
+  await db.insert(agents).values({ fullName: "Demo Ava Stone", siteId: solId, teamCode: "DE", extension: "1465" });
 });
 
 describe("authentication", () => {
@@ -127,7 +127,7 @@ describe("smart paste → review → submit", () => {
     const rows = await previewPaste(qa.actor, PASTE);
     expect(rows).toHaveLength(3);
     const [a, b, c] = rows;
-    expect(a.ok && a.matchedAgent?.fullName).toBe("Sarah Patel");
+    expect(a.ok && a.matchedAgent?.fullName).toBe("Demo Ava Stone");
     expect(a.ok && a.site?.code).toBe("SOL");
     expect(a.ok && a.callerMasked).toBe("077•• •••123");
     expect(JSON.stringify(rows)).not.toContain("07700900123"); // the full number never leaves the server
@@ -183,7 +183,7 @@ describe("smart paste → review → submit", () => {
   });
 
   it("won’t submit with an unanswered criterion", async () => {
-    const { id } = await createManual(qa.actor, { agentId: (await matchPortalNames([{ agentName: "Sarah Patel", siteCode: "SOL" }]))[0].agent!.id, callAt: new Date("2026-09-01T10:00:00Z"), durationSec: 90, callType: "airport" });
+    const { id } = await createManual(qa.actor, { agentId: (await matchPortalNames([{ agentName: "Demo Ava Stone", siteCode: "SOL" }]))[0].agent!.id, callAt: new Date("2026-09-01T10:00:00Z"), durationSec: 90, callType: "airport" });
     const payload = await allYesPayload(id);
     const first = Object.keys(payload.answers)[0];
     delete payload.answers[first];
@@ -191,7 +191,7 @@ describe("smart paste → review → submit", () => {
   });
 
   it("manual entry pre-selects N/A by call type and warns about duplicates", async () => {
-    const agentId = (await matchPortalNames([{ agentName: "Sarah Patel", siteCode: "SOL" }]))[0].agent!.id;
+    const agentId = (await matchPortalNames([{ agentName: "Demo Ava Stone", siteCode: "SOL" }]))[0].agent!.id;
     const { id, duplicateOf } = await createManual(qa.actor, { agentId, callAt: new Date("2026-08-31T01:12:30Z"), durationSec: 85, callType: "airport", caller: "07700 900123" });
     expect(duplicateOf).toBe(queued[0]);
     const review = await getReview(qa.actor, id);
@@ -232,7 +232,7 @@ describe("reporting", () => {
     expect(k.autoFails).toBe(1);
     expect(k.meetsShare).toBe(50);
     const table = await agentTable({ from: week, to: week });
-    const sarah = table.find((t) => t.name === "Sarah Patel")!;
+    const sarah = table.find((t) => t.name === "Demo Ava Stone")!;
     expect(sarah.calls).toBe(1);
     expect(sarah.avgScore).toBe(100);
     const starter = table.find((t) => t.name === "New Starter")!;
@@ -323,7 +323,7 @@ describe("workbook import", () => {
     return wb.xlsx.writeBuffer();
   }
   const typical = (agent: string, campaign: string, hihi: string | null = null, score = 1) => [
-    campaign, agent, null, null, null, "Booking", "Hassan", 46272,
+    campaign, agent, null, null, null, "Booking", "Demo Reviewer", 46272,
     ...Array.from({ length: 21 }, (_, i) => ([5, 7, 8].includes(i) ? "N/a" : "Yes")),
     hihi, score, null,
   ];

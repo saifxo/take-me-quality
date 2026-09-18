@@ -58,11 +58,10 @@ Open http://localhost:3000.
 
 | Account | Email | Password |
 |---|---|---|
-| Admin | `admin@takeme.taxi` (or `SEED_ADMIN_EMAIL`) | `SEED_ADMIN_PASSWORD` from `.env.local` |
-| Reviewer (sample data only) | `qa@takeme.taxi` | `Reviewer-2026!` |
-| Reviewer (sample data only) | `qa2@takeme.taxi` | `Reviewer-2026!` |
+| Demo admin | `demo.admin@takeme.taxi` (or `SEED_ADMIN_EMAIL`) | `SEED_ADMIN_PASSWORD` from `.env.local` |
+| Demo QA reviewer | `demo.qa@takeme.taxi` | `Demo-QA-2026!` |
 
-`db:seed:sample` adds a fictional roster and ~13 weeks of reviews so the dashboards have something to show. Use `npm run db:seed` instead for an empty system (framework, sites and the admin account only), then import your real workbook from **Import & export**.
+`db:seed:sample` adds clearly labelled fictional sites, agents, calls and ~13 weeks of reviews so the dashboards have something to show. It does not import workbook people or call data. Use `npm run db:seed` instead for an empty system (framework, demo sites and the admin account only).
 
 ### Useful scripts
 

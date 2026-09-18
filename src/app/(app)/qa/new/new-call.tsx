@@ -17,7 +17,7 @@ import { cn } from "@/lib/utils";
 type AgentOpt = { id: string; fullName: string; siteId: string; siteName: string; siteCode: string; status: string };
 type SiteOpt = { id: string; name: string; code: string };
 
-const EXAMPLE = `Queue\t561 / 1465 - Sarah Patel - SOL - DE\t07700900123\t2026-08-31 02:12:07\t00:01:25\t» Play « » Download « » Email «`;
+const EXAMPLE = `Queue\t901 / 8101 - Demo Ava Stone - DMN - D1\t07700900123\t2026-08-31 02:12:07\t00:01:25\t» Play « » Download « » Email «`;
 
 export function NewCall({ initialTab, agents, sites }: { initialTab: "paste" | "manual"; agents: AgentOpt[]; sites: SiteOpt[] }) {
   const [tab, setTab] = useState(initialTab);

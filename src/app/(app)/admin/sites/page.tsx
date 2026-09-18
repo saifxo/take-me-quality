@@ -20,7 +20,7 @@ export default async function SitesPage() {
       <PageHeader
         eyebrow="Organisation"
         title="Sites"
-        description="The towns and teams whose calls are reviewed. The code must match the portal (e.g. SOL in “Sarah Patel - SOL - DE”) so smart paste can place new agents."
+        description="The towns and teams whose calls are reviewed. The code must match the portal (e.g. DMN in “Demo Ava Stone - DMN - D1”) so smart paste can place new agents."
         actions={<SiteEditor />}
       />
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">

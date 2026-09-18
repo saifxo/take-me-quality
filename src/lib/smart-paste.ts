@@ -2,8 +2,8 @@
  * Smart paste: turn rows copied from the call-recordings portal into call details.
  *
  * A portal row looks like (cells separated by tabs when copied from the browser):
- *   Queue  561 / 1465 - Sarah Patel - SOL - DE  07700900123  2026-08-31 02:12:07  00:01:25  » Play « » Download « » Email «
- *   Exten  James Ellis - BIR - BE  Sarah Patel - SOL - DE  2026-08-31 02:57:57  00:00:10  …
+ *   Queue  901 / 8101 - Demo Ava Stone - DMN - D1  07700900123  2026-08-31 02:12:07  00:01:25  » Play « » Download « » Email «
+ *   Exten  Demo Ivy Lake - DMC - D1  Demo Ava Stone - DMN - D1  2026-08-31 02:57:57  00:00:10  …
  *
  * The parser is deliberately forgiving: tabs or spaces, rows collapsed onto one line, cells split over
  * several lines, header rows, "» Play «" link text, UK or ISO dates, +44 numbers and withheld callers.
