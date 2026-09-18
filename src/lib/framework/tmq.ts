@@ -70,7 +70,7 @@ export const TMQ_SECTIONS: FrameworkSection[] = [
         description:
           "The agent must answer the call within 5 seconds of connection and deliver the correct, approved company greeting to maintain a consistent and professional brand identity. This includes stating the approved company/brand name and following the agreed greeting format. Delayed or absent greetings damage professionalism and customer trust.",
         yesDesc:
-          "Agent answered within 5 seconds with the full and correct greeting, including the approved company/brand name (e.g. “Good morning, Take Me, Sarah speaking, how can I help?”).",
+          "Agent answered within 5 seconds with the full and correct greeting, including the approved company/brand name (e.g. “Good morning, Take Me, Demo Ava speaking, how can I help?”).",
         partialDesc:
           "Agent greeted the caller, but the greeting was either delayed (5–10 seconds), slightly incomplete, or missing the correct brand name.",
         noDesc:

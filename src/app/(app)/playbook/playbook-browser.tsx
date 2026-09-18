@@ -191,7 +191,7 @@ export function PlaybookBrowser({
               <p className="mt-1 text-[15px] font-semibold">{notApproved.join(" · ")}</p>
             </div>
           </div>
-          <p className="mt-3 text-[13.5px] text-muted">Example: “Good morning, Take Me, Sarah speaking, how can I help?” Close with “Thanks for calling Take Me, goodbye.”</p>
+          <p className="mt-3 text-[13.5px] text-muted">Example: “Good morning, Take Me, Demo Ava speaking, how can I help?” Close with “Thanks for calling Take Me, goodbye.”</p>
         </Card>
 
         <Card id="smart-paste" className="scroll-mt-6 p-5">

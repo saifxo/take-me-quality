@@ -30,7 +30,7 @@ export function HeroScene() {
               <span className="absolute inline-flex size-full animate-ping rounded-full bg-cyan opacity-70" />
               <span className="relative inline-flex size-2.5 rounded-full bg-cyan" />
             </span>
-            <span className="text-[12px] font-semibold tracking-wide text-white/80 uppercase">Queue 561</span>
+            <span className="text-[12px] font-semibold tracking-wide text-white/80 uppercase">Demo queue 901</span>
           </div>
           <span className="font-mono text-[12px] text-white/60">01:25</span>
         </div>
@@ -43,7 +43,7 @@ export function HeroScene() {
             />
           ))}
         </div>
-        <p className="mt-3 text-[13px] leading-snug text-white/85">“Good morning, Take Me, Sarah speaking — how can I help?”</p>
+        <p className="mt-3 text-[13px] leading-snug text-white/85">“Good morning, Take Me, Demo Ava speaking — how can I help?”</p>
       </div>
 
       {/* Scorecard card */}
