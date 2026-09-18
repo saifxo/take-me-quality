@@ -1,0 +1,22 @@
+services:
+  db:
+    image: postgres:17-alpine
+    container_name: takeme-quality-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: tmq
+      POSTGRES_PASSWORD: tmq_local_pw
+      POSTGRES_DB: tmq
+    ports:
+      - "5433:5432"
+    volumes:
+      - tmq_pgdata:/var/lib/postgresql/data
+      - ./docker/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tmq -d tmq"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  tmq_pgdata:

@@ -1,0 +1,553 @@
+<title>TMQ Platform Plan</title>
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Figtree:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="styles.css">
+<script src="app.js"></script>
+
+<header class="mast">
+  <div class="mast-inner">
+    <div class="mast-top">
+      <div class="bubble" aria-hidden="true">TMQ</div>
+      <p class="kicker">Proposal &middot; <b>Take Me Quality</b> &middot; context, plan &amp; open questions &middot; 14 Sep 2026</p>
+    </div>
+    <h1>TMQ Platform <span>Plan</span></h1>
+    <p class="thesis">Retire the weekly TMQ scorecard spreadsheet. Reviewers score calls in a fast, guided web form; managers get live dashboards, agent profiles and Gemini coaching summaries. It uses the same scoring rules, now with traceability, security and a full history.</p>
+    <dl class="facts">
+      <div><dd>5</dd><dt>sheets audited</dt></div>
+      <div><dd>21</dd><dt>criteria in 4 sections</dt></div>
+      <div><dd>11</dd><dt>zero-tolerance issues</dt></div>
+      <div><dd>14</dd><dt>issues found in the sheet</dt></div>
+      <div><dd>4</dd><dt>delivery phases</dt></div>
+    </dl>
+  </div>
+</header>
+
+<div class="layout">
+  <nav class="toc" aria-label="Contents">
+    <p>Contents</p>
+    <ol>
+      <li><a href="#glance"><span>1</span>At a glance</a></li>
+      <li><a href="#today"><span>2</span>How QA works today</a></li>
+      <li><a href="#rules"><span>3</span>The scoring rules</a></li>
+      <li><a href="#defects"><span>4</span>What the sheet gets wrong</a></li>
+      <li><a href="#product"><span>5</span>The platform</a></li>
+      <li><a href="#ai"><span>6</span>AI with Gemini</a></li>
+      <li><a href="#stack"><span>7</span>Architecture &amp; stack</a></li>
+      <li><a href="#data"><span>8</span>Data model</a></li>
+      <li><a href="#security"><span>9</span>Security &amp; privacy</a></li>
+      <li><a href="#plan"><span>10</span>Delivery plan</a></li>
+      <li><a href="#beyond"><span>11</span>What you might be missing</a></li>
+      <li><a href="#questions"><span>12</span>Open questions</a></li>
+    </ol>
+  </nav>
+
+  <main>
+    <section id="glance">
+      <div class="sec-head"><span class="sec-num">Section 1</span><h2>At a glance</h2></div>
+      <p class="lede">A branded web app for the Take Me Quality (TMQ) programme. There are two roles to start with. <strong>QA reviewers</strong> listen to calls in the existing recordings portal and score them in a purpose-built form. <strong>Admins</strong> see every score as it lands, drill into any agent’s week, tune the rules, and manage accounts.</p>
+      <dl class="decide">
+        <dt>Keep</dt><dd>The TMQ framework exactly as marked today: 21 criteria, Yes / Partial / No / N/A, critical deductions, zero-tolerance auto-fail and the 90% KPI line. Section 3 has a live copy of the engine to check against.</dd>
+        <dt>Replace</dt><dd>Hand-typed rows, weekly files, drifting formulas and the unsaved <code>=AI()</code> column. Everything goes into one database with an audit trail.</dd>
+        <dt>Stack</dt><dd>Next.js (App Router, TypeScript), Tailwind + shadcn/ui in Take Me colours, Drizzle ORM, Better Auth, Vercel AI SDK with Gemini.</dd>
+        <dt>Database</dt><dd><strong>PostgreSQL on Neon, London region</strong>, connected through the Vercel Marketplace, with a separate database branch for every preview deploy. Locally, Postgres 17 runs in Docker (already installed on this machine).</dd>
+        <dt>Hosting</dt><dd>Vercel, with functions pinned to London (<code>lhr1</code>) next to the database. The free Hobby plan is fine for the demo; production use by a company needs Pro.</dd>
+        <dt>Security</dt><dd>No public sign-up. Admins create every account, and role checks run on the server for every action. Customer numbers are masked, all changes are logged, and the Gemini key stays on the server.</dd>
+        <dt>First milestone</dt><dd>A demo your boss can click through. A reviewer pastes a call row, scores it in about a minute, and the admin dashboard, agent profile and AI summary update straight away.</dd>
+      </dl>
+      <div class="callout"><span class="eyebrow">Before we build</span><p>Eight questions in <a href="#questions">section 12</a> change the build. Each one has a default, so work can start now and your answers adjust it.</p></div>
+    </section>
+
+    <section id="today">
+      <div class="sec-head"><span class="sec-num">Section 2</span><h2>How QA works today</h2></div>
+      <div class="prose">
+        <p>QA runs on a weekly cycle. The reviewer opens the call-recordings portal, picks an agent and last week’s window (the screenshot shows Monday 31 Aug to Sunday 6 Sep 2026), plays calls and scores each one as a row on the <strong>Analysis</strong> sheet. The <strong>Overview</strong> sheet rolls those rows up per campaign and agent. A Google Sheets <code>=AI()</code> formula writes a coaching blurb per agent. The workbook is saved under the Monday’s date, e.g. <code>20260907 – Birmingham TMQ Scorecard</code>, and next week starts from a fresh copy.</p>
+        <p>The <code>__xludf.DUMMYFUNCTION</code> wrappers inside the file show it was built in Google Sheets and exported to Excel, and <code>=AI()</code> is Sheets’ built-in Gemini function. The team already uses Gemini, so it is the natural model for the platform too.</p>
+      </div>
+
+      <figure>
+        <div class="fig-body">
+          <svg class="diagram" viewBox="0 0 1000 300" role="img" aria-label="Today, a reviewer hand-types each call into a weekly workbook whose formulas and AI column produce the rollup. With the platform, a pasted call row pre-fills a guided review that is scored on the server and stored in one database feeding live dashboards and saved AI summaries.">
+            <defs>
+              <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="arrowhead" d="M0,0 L10,5 L0,10 z"/></marker>
+              <marker id="ahh" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="arrowhead hot" d="M0,0 L10,5 L0,10 z"/></marker>
+            </defs>
+            <text class="lane-t" x="8" y="24">TODAY · A NEW WORKBOOK EVERY MONDAY</text>
+            <g>
+              <rect class="box" x="8" y="40" width="136" height="60" rx="10"/><text class="ttl" x="76" y="66" text-anchor="middle">Recordings portal</text><text class="sub" x="76" y="84" text-anchor="middle">play each call</text>
+              <rect class="box" x="220" y="40" width="136" height="60" rx="10"/><text class="ttl" x="288" y="66" text-anchor="middle">QA reviewer</text><text class="sub" x="288" y="84" text-anchor="middle">listens, decides</text>
+              <rect class="box" x="432" y="40" width="136" height="60" rx="10"/><text class="ttl" x="500" y="66" text-anchor="middle">Analysis sheet</text><text class="sub" x="500" y="84" text-anchor="middle">1 row per call</text>
+              <rect class="box" x="644" y="40" width="136" height="60" rx="10"/><text class="ttl" x="712" y="66" text-anchor="middle">Overview sheet</text><text class="sub" x="712" y="84" text-anchor="middle">formula rollups</text>
+              <rect class="box" x="856" y="40" width="136" height="60" rx="10"/><text class="ttl" x="924" y="66" text-anchor="middle">=AI() column</text><text class="sub" x="924" y="84" text-anchor="middle">per agent, unsaved</text>
+              <line class="edge" x1="146" y1="70" x2="216" y2="70" marker-end="url(#ah)"/><text class="lbl" x="182" y="62" text-anchor="middle">listen</text>
+              <line class="edge" x1="358" y1="70" x2="428" y2="70" marker-end="url(#ah)"/><text class="lbl" x="394" y="62" text-anchor="middle">hand-typed</text>
+              <line class="edge" x1="570" y1="70" x2="640" y2="70" marker-end="url(#ah)"/><text class="lbl" x="606" y="62" text-anchor="middle">AVERAGEIFS</text>
+              <line class="edge" x1="782" y1="70" x2="852" y2="70" marker-end="url(#ah)"/><text class="lbl" x="818" y="62" text-anchor="middle">TEXTJOIN</text>
+              <text class="lbl" x="432" y="122">no link back to the recording · free-text names · blank = No</text>
+            </g>
+            <text class="lane-t" x="8" y="178">WITH THE PLATFORM · ONE DATABASE, EVERY WEEK</text>
+            <g>
+              <rect class="box" x="8" y="194" width="136" height="60" rx="10"/><text class="ttl" x="76" y="220" text-anchor="middle">Recordings portal</text><text class="sub" x="76" y="238" text-anchor="middle">unchanged</text>
+              <rect class="box hot" x="220" y="194" width="136" height="60" rx="10"/><text class="ttl" x="288" y="220" text-anchor="middle">Smart paste</text><text class="sub" x="288" y="238" text-anchor="middle">row → call details</text>
+              <rect class="box hot" x="432" y="194" width="136" height="60" rx="10"/><text class="ttl" x="500" y="220" text-anchor="middle">Review Studio</text><text class="sub" x="500" y="238" text-anchor="middle">guided scoring</text>
+              <rect class="box hot" x="644" y="194" width="136" height="60" rx="10"/><text class="ttl" x="712" y="220" text-anchor="middle">Postgres</text><text class="sub" x="712" y="238" text-anchor="middle">scored on server</text>
+              <rect class="box hot" x="856" y="194" width="136" height="60" rx="10"/><text class="ttl" x="924" y="220" text-anchor="middle">Dashboards + AI</text><text class="sub" x="924" y="238" text-anchor="middle">live, saved, audited</text>
+              <line class="edge hot" x1="146" y1="224" x2="216" y2="224" marker-end="url(#ahh)"/><text class="lbl" x="182" y="216" text-anchor="middle">copy row</text>
+              <line class="edge hot" x1="358" y1="224" x2="428" y2="224" marker-end="url(#ahh)"/><text class="lbl" x="394" y="216" text-anchor="middle">pre-filled</text>
+              <line class="edge hot" x1="570" y1="224" x2="640" y2="224" marker-end="url(#ahh)"/><text class="lbl" x="606" y="216" text-anchor="middle">validated</text>
+              <line class="edge hot" x1="782" y1="224" x2="852" y2="224" marker-end="url(#ahh)"/><text class="lbl" x="818" y="216" text-anchor="middle">live queries</text>
+              <text class="lbl" x="432" y="276">every score traceable to its call · rule version stored · changes logged</text>
+            </g>
+          </svg>
+        </div>
+        <figcaption>The reviewer’s listening step stays manual in both flows. What changes is everything after it. The hand-typed row becomes a pasted, pre-filled form; spreadsheet formulas become one scoring engine on the server; weekly files become a single history.</figcaption>
+      </figure>
+
+      <h3>The recordings portal</h3>
+      <div class="prose"><p>The portal filters by agent, date and time window, and call duration. Each result row already carries everything a review needs to point back to the call:</p></div>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>Portal column</th><th>Example (made up)</th><th>What we keep</th></tr></thead>
+        <tbody>
+          <tr><td>Context</td><td class="mono">Queue / Exten</td><td>Queue calls are customer calls. Exten rows are agent-to-agent calls, skipped by default.</td></tr>
+          <tr><td>Destination</td><td class="mono">561 / 1465 - Sarah Patel - SOL - DE</td><td>Queue, extension, agent, site code and team code. The agent naming convention is <code>Name - SITE - TEAM</code>.</td></tr>
+          <tr><td>Origination</td><td class="mono">07700 900123</td><td>Caller number, <strong>masked on entry</strong> (e.g. <code>077•• •••123</code>).</td></tr>
+          <tr><td>Date Time</td><td class="mono">2026-08-31 02:12:07</td><td>Call time, which also decides the reporting week (w/c Monday).</td></tr>
+          <tr><td>Duration</td><td class="mono">00:01:25</td><td>Handling time, which feeds the Avg AHT column the sheet never managed to fill.</td></tr>
+        </tbody>
+      </table></div>
+
+      <h3>The workbook, sheet by sheet</h3>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>Sheet</th><th>What it holds</th><th>Becomes</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Analysis</strong></td><td>One row per reviewed call: campaign, agent, phone, date/time, duration, call type, QA name, review date, 21 criteria, one <em>HiHi</em> (High Impact Handling Issue), score, feedback, four section summaries.</td><td>The Review Studio form and the <code>evaluations</code> table.</td></tr>
+          <tr><td><strong>Overview</strong></td><td>Per campaign (Nuneaton, Solihull, Birmingham, N/a): each agent’s QC score, total calls, below-KPI share, Avg AHT, four section averages, failed calls and reasons, plus an <code>=AI()</code> coaching summary.</td><td>The admin dashboard and agent profiles.</td></tr>
+          <tr><td><strong>TMQ Framework</strong></td><td>The marking rubric: Yes / Partial / No descriptors for 21 criteria, marker notes (“postcodes spelling, on public location”, “Paraphrase = Location + Street or Area”) and the approved and not-approved greeting names. An older 19-criterion version sits above it.</td><td>The Playbook, shown next to every question, plus versioned scorecards.</td></tr>
+          <tr><td><strong>Print Version</strong></td><td>The same rubric laid out for paper.</td><td>A print stylesheet and PDF export.</td></tr>
+          <tr><td><strong>High Impact Handling Issue Info</strong></td><td>The 11 zero-tolerance issues and what each one means.</td><td>The zero-tolerance panel in the form and a settings list.</td></tr>
+        </tbody>
+      </table></div>
+
+      <h3>What the current data says</h3>
+      <div class="prose">
+        <ul>
+          <li><strong>40 evaluations</strong> of 4 agents, 10 calls each, across 3 campaigns (Solihull 20, Birmingham 10, Nuneaton 10). There is one reviewer, and the review dates are 7 and 14 Sep 2026.</li>
+          <li><strong>Every call scored 100%.</strong> Authentication, Booking Procedures and Airport are N/A on every row, and call type is “Booking” or blank.</li>
+          <li><strong>Phone, call date/time and duration are empty in all 40 rows</strong>, so none of these scores can be traced back to its recording.</li>
+        </ul>
+        <p>A wall of 100% is either an outstanding team or a lenient marker, and today nobody can tell which. The platform answers that with reviewer calibration (section 5) and with call-level traceability.</p>
+      </div>
+    </section>
+
+    <section id="rules">
+      <div class="sec-head"><span class="sec-num">Section 3</span><h2>The scoring rules, reverse-engineered</h2></div>
+      <p class="lede">Every rule below comes from the formulas in <code>Analysis!AE3</code> and <code>AJ3:AM3</code> and from the sheet’s colour rules. The platform will reproduce them exactly and prove it with tests built from these same cases.</p>
+
+      <div class="grid-2">
+        <div class="panel">
+          <h4>Points per answer</h4>
+          <p class="small muted">Across the 21 criteria (Analysis columns I–AC)</p>
+          <ul>
+            <li><strong>Yes</strong> = 1 &middot; <strong>Partial</strong> = 0.5 &middot; <strong>No</strong> = 0</li>
+            <li><strong>N/A</strong> is left out of the count entirely</li>
+            <li>Score = (points − deductions) ÷ applicable criteria</li>
+            <li>Section scores use the same points, <em>without</em> deductions</li>
+          </ul>
+        </div>
+        <div class="panel">
+          <h4>Critical deductions</h4>
+          <p class="small muted">Taken off on top of losing the point</p>
+          <ul>
+            <li>Confirming &amp; Clarifying Names: No −2</li>
+            <li>Full Address Details: No −2</li>
+            <li>Authentication for Commercial Customers: No −2, Partial −1</li>
+            <li>Correct Booking Procedures: No −2, Partial −1</li>
+            <li>Airport Bookings: No −2, Partial −1</li>
+          </ul>
+        </div>
+      </div>
+
+      <figure>
+        <div class="fig-body">
+          <svg class="ruler" viewBox="0 0 960 124" role="img" aria-label="Score bands on a true 0 to 100 percent scale: any zero-tolerance issue forces 0 percent, 90 percent and under is Below KPI, above 90 percent meets KPI, and exactly 100 percent is Perfect.">
+            <text x="30" y="30">0% · Auto-fail (any zero-tolerance issue)</text>
+            <text x="930" y="30" text-anchor="end">100% · Perfect</text>
+            <rect class="b-below" x="40" y="52" width="790" height="16" rx="4"/>
+            <rect class="b-meets" x="832" y="52" width="88" height="16" rx="4"/>
+            <circle class="m-fail" cx="40" cy="60" r="9"/>
+            <polygon class="m-perfect" points="920,47 922.9,55.9 932.4,56 924.8,61.6 927.6,70.6 920,65.2 912.4,70.6 915.2,61.6 907.6,56 917.1,55.9"/>
+            <line class="axis" x1="40" y1="74" x2="40" y2="80"/><line class="axis" x1="260" y1="74" x2="260" y2="80"/><line class="axis" x1="480" y1="74" x2="480" y2="80"/><line class="axis" x1="700" y1="74" x2="700" y2="80"/><line class="axis" x1="832" y1="74" x2="832" y2="80"/><line class="axis" x1="920" y1="74" x2="920" y2="80"/>
+            <text class="tick" x="40" y="94" text-anchor="middle">0%</text><text class="tick" x="260" y="94" text-anchor="middle">25%</text><text class="tick" x="480" y="94" text-anchor="middle">50%</text><text class="tick" x="700" y="94" text-anchor="middle">75%</text><text class="tick" x="832" y="94" text-anchor="middle">90%</text><text class="tick" x="920" y="94" text-anchor="middle">100%</text>
+            <text x="436" y="116" text-anchor="middle">Below KPI · 90% and under</text>
+            <text x="920" y="116" text-anchor="end">Meets KPI · above 90%</text>
+          </svg>
+        </div>
+        <figcaption>Drawn to scale. The sheet colours 100% gold, 90.01% and up green, anything above 0% peach, and 0% red. “Below KPI” counts scores of 90% and under, so exactly 90.00% misses the target. On the Overview sheet, an agent turns red when more than 15% of their calls fall below KPI.</figcaption>
+      </figure>
+
+      <h3>Worked examples</h3>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>Call</th><th>What differs from a typical booking</th><th class="num">Applicable</th><th>Maths</th><th class="num">Score</th><th>Band</th></tr></thead>
+        <tbody>
+          <tr><td>Typical booking</td><td>Nothing (Authentication, Procedures, Airport are N/A)</td><td class="num">18</td><td class="mono">18 ÷ 18</td><td class="num">100%</td><td><span class="pill perfect"><i aria-hidden="true">★</i>Perfect</span></td></tr>
+          <tr><td>Asked to spell “Tesco”</td><td>Full Address Partial · Spell Well-Known Locations No</td><td class="num">18</td><td class="mono">16.5 ÷ 18</td><td class="num">91.67%</td><td><span class="pill meets"><i aria-hidden="true">✓</i>Meets KPI</span></td></tr>
+          <tr><td>Missed the full address</td><td>Full Address No (critical)</td><td class="num">18</td><td class="mono">(17 − 2) ÷ 18</td><td class="num">83.33%</td><td><span class="pill below"><i aria-hidden="true">!</i>Below KPI</span></td></tr>
+          <tr><td>Airport, terminal not confirmed</td><td>Procedures Yes · Airport Partial (critical)</td><td class="num">20</td><td class="mono">(19.5 − 1) ÷ 20</td><td class="num">92.50%</td><td><span class="pill meets"><i aria-hidden="true">✓</i>Meets KPI</span></td></tr>
+          <tr><td>Exactly 90%</td><td>Procedures &amp; Airport Yes · Holds No · ETA No</td><td class="num">20</td><td class="mono">18 ÷ 20</td><td class="num">90.00%</td><td><span class="pill below"><i aria-hidden="true">!</i>Below KPI</span></td></tr>
+          <tr><td>Account caller not authenticated</td><td>Authentication No (critical)</td><td class="num">19</td><td class="mono">(18 − 2) ÷ 19</td><td class="num">84.21%</td><td><span class="pill below"><i aria-hidden="true">!</i>Below KPI</span></td></tr>
+          <tr><td>GDPR breach</td><td>Any answers, plus a zero-tolerance issue</td><td class="num">—</td><td class="mono">forced</td><td class="num">0%</td><td><span class="pill fail"><i aria-hidden="true">✕</i>Auto-fail</span></td></tr>
+          <tr><td>Every answer No</td><td>All 21 criteria No</td><td class="num">21</td><td class="mono">(0 − 10) ÷ 21</td><td class="num">−47.62%</td><td><span class="pill none"><i aria-hidden="true">?</i>No colour rule</span></td></tr>
+        </tbody>
+      </table></div>
+
+      <h3>Try the engine</h3>
+      <div class="prose"><p>This is the scoring engine running in your browser with the sheet’s exact rules. It is also the interaction model for the reviewer’s form: one tap per criterion, a live score, and the deductions spelled out. Pick a sample call or change any answer.</p></div>
+      <div class="scorer" id="scorer">
+        <div class="scn"><span class="eyebrow">Sample calls</span><div id="scn-list" style="display:contents"></div></div>
+        <div id="crit-list"></div>
+        <aside class="live" aria-live="polite">
+          <span class="eyebrow">Live score</span>
+          <div class="figure" id="live-fig">100%</div>
+          <div><span class="pill perfect" id="live-band"><i aria-hidden="true">★</i>Perfect</span></div>
+          <div class="math" id="live-math">18 applicable · 18 points − 0 penalty = 18 ÷ 18</div>
+          <div><span class="eyebrow">Sections (no deductions)</span><div class="meters" id="live-meters" style="margin-top:8px"></div></div>
+          <div><span class="eyebrow">Critical deductions</span><ul class="pens" id="live-pens" style="margin-top:8px"></ul></div>
+        </aside>
+        <div class="hihi-wrap"><span class="eyebrow">Zero-tolerance issues (“HiHi”) · any one forces 0%</span><div class="hihi" id="hihi-list"></div></div>
+      </div>
+      <p class="small muted">Authentication has no Partial option because the rubric doesn’t define one: a missed or half-done check counts as No.</p>
+
+      <h3>The eleven zero-tolerance issues</h3>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>Short name</th><th>Issue</th></tr></thead>
+        <tbody>
+          <tr><td>GDPR</td><td>Any unauthorised sharing, mishandling or exposure of personal data, even by accident.</td></tr>
+          <tr><td>Rudeness</td><td>Rudeness, arrogance, condescension, sarcasm or impatience.</td></tr>
+          <tr><td>Booking Error</td><td>A capture mistake (location, time, passenger) that causes a no-show or failed booking.</td></tr>
+          <tr><td>Hang Up</td><td>Ending the call before the booking or query is resolved or properly transferred.</td></tr>
+          <tr><td>Business Avoidance</td><td>Turning customers away with false availability, overcharging or claiming no service.</td></tr>
+          <tr><td>Language</td><td>Speaking a language other than English; key details must always be confirmed in English.</td></tr>
+          <tr><td>Business Refusal</td><td>Refusing work (“too busy”, “we can’t do that”) without a valid reason.</td></tr>
+          <tr><td>Professionalism</td><td>Criticising the company, its technology, processes, colleagues or partners.</td></tr>
+          <tr><td>Competition</td><td>Giving out a competitor’s number, website or contact details.</td></tr>
+          <tr><td>No Answer</td><td>Auto-answered or unattended calls.</td></tr>
+          <tr><td>Foul Language</td><td>Profanity or offensive language at any point, even under the breath.</td></tr>
+        </tbody>
+      </table></div>
+    </section>
+
+    <section id="defects">
+      <div class="sec-head"><span class="sec-num">Section 4</span><h2>What the sheet gets wrong</h2></div>
+      <p class="lede">Fourteen issues found by reading every formula, dropdown and colour rule in the workbook. This is the case for the platform in concrete terms. Each issue names the cells involved and the fix.</p>
+      <ol class="defects">
+        <li><span class="n">01</span><div><h4>Scores can’t be traced to their calls</h4><p>Phone Number, Date &amp; Time and Duration are empty in all 40 rows. A disputed score can’t be replayed, and Avg AHT can’t be calculated.</p><p class="fix"><b>Fix:</b> smart paste captures queue, extension, call time and duration. The caller number is stored masked.</p></div><div class="meta"><span class="sev high">High</span><code>Analysis C–E</code></div></li>
+        <li><span class="n">02</span><div><h4>A skipped answer silently counts as No</h4><p>The divisor is <code>COUNTIF(I:AC,"&lt;&gt;N/A")</code>, which also counts blank cells. A forgotten dropdown lowers the score with no warning.</p><p class="fix"><b>Fix:</b> every criterion needs an answer before submit, and N/A is an explicit choice.</p></div><div class="meta"><span class="sev high">High</span><code>Analysis AE</code></div></li>
+        <li><span class="n">03</span><div><h4>Names are free text</h4><p>The only reviewer appears as two different people because one entry has a trailing space. A typo in an agent’s name splits their history the same way.</p><p class="fix"><b>Fix:</b> agents and reviewers come from managed lists, and smart paste matches portal names to the roster.</p></div><div class="meta"><span class="sev high">High</span><code>Analysis B, G</code></div></li>
+        <li><span class="n">04</span><div><h4>A new workbook every week</h4><p>Week-on-week trends mean copying between files. Overview blocks are fixed at 30 rows per campaign, and a new site means copying formulas.</p><p class="fix"><b>Fix:</b> one database, any date range, unlimited sites and agents.</p></div><div class="meta"><span class="sev high">High</span><code>Whole file</code></div></li>
+        <li><span class="n">05</span><div><h4>No access control or audit trail</h4><p>Anyone with edit access can change past scores without a trace, and customer numbers would sit in a shared file.</p><p class="fix"><b>Fix:</b> role-based access, an append-only audit log, masked numbers and a UK-hosted database.</p></div><div class="meta"><span class="sev high">High</span><code>Whole file</code></div></li>
+        <li><span class="n">06</span><div><h4>Avg AHT formula drifts down the column</h4><p><code>E7</code> compares against the campaign cell <code>A5</code>, but <code>E8</code> points at <code>A6</code>, <code>E9</code> at <code>A7</code>, and so on. Every agent after the first gets a wrong or blank AHT.</p><p class="fix"><b>Fix:</b> one tested query instead of copied formulas.</p></div><div class="meta"><span class="sev med">Medium</span><code>Overview E8:E132</code></div></li>
+        <li><span class="n">07</span><div><h4>Failed Reasons ranges drift too</h4><p><code>K7</code> reads <code>Analysis!B2:B999</code>, <code>K8</code> starts at row 3, and by <code>K71</code> it starts at row 66. Later agents silently skip early rows, and the lookup ignores campaign.</p><p class="fix"><b>Fix:</b> reasons are linked records, not joined text.</p></div><div class="meta"><span class="sev med">Medium</span><code>Overview K7:K132</code></div></li>
+        <li><span class="n">08</span><div><h4>Only one zero-tolerance issue per call</h4><p>HiHi is a single dropdown, so a call with two breaches records just one.</p><p class="fix"><b>Fix:</b> multi-select, with a note for each issue.</p></div><div class="meta"><span class="sev med">Medium</span><code>Analysis AD</code></div></li>
+        <li><span class="n">09</span><div><h4>Sections divide by zero</h4><p>If every criterion in a section is N/A, the section summary shows <code>#DIV/0!</code>, which then breaks that agent’s averages.</p><p class="fix"><b>Fix:</b> an all-N/A section is “not scored” and left out of averages.</p></div><div class="meta"><span class="sev med">Medium</span><code>Analysis AJ:AM</code></div></li>
+        <li><span class="n">10</span><div><h4>AI summaries run on empty input</h4><p>Agents with no comments get “Please provide the feedback you would like me to summarise…” as their coaching summary. The output changes on every recalculation and is never saved.</p><p class="fix"><b>Fix:</b> AI runs only when there is enough data, and each result is saved with its date, model and prompt version.</p></div><div class="meta"><span class="sev med">Medium</span><code>Overview M</code></div></li>
+        <li><span class="n">11</span><div><h4>Two rubric versions in one sheet</h4><p>The older 19-criterion rubric sits above the current 21-criterion one, and nothing records which version a call was marked under.</p><p class="fix"><b>Fix:</b> versioned scorecards. Each evaluation keeps the version it was marked with.</p></div><div class="meta"><span class="sev med">Medium</span><code>TMQ Framework</code></div></li>
+        <li><span class="n">12</span><div><h4>Scores can go negative</h4><p>Deductions have no floor. A call with every answer No scores −47.62% and matches no colour rule.</p><p class="fix"><b>Fix:</b> floor at 0%, pending your answer to Q7.</p></div><div class="meta"><span class="sev low">Low</span><code>Analysis AE</code></div></li>
+        <li><span class="n">13</span><div><h4>Campaign average is an average of averages</h4><p><code>E5</code> averages the agent scores, so an agent with 2 calls counts as much as one with 10.</p><p class="fix"><b>Fix:</b> call-weighted averages by default, agent-weighted available as an option.</p></div><div class="meta"><span class="sev low">Low</span><code>Overview E5</code></div></li>
+        <li><span class="n">14</span><div><h4>The “N/a” campaign block shows errors</h4><p>The fourth block, meant for unassigned agents, shows <code>#N/A</code> when it is empty.</p><p class="fix"><b>Fix:</b> an explicit “Unassigned” filter instead.</p></div><div class="meta"><span class="sev low">Low</span><code>Overview A101:M132</code></div></li>
+      </ol>
+    </section>
+
+    <section id="product">
+      <div class="sec-head"><span class="sec-num">Section 5</span><h2>The platform</h2></div>
+      <p class="lede">A public front door in the Take Me brand, a reviewer workspace built for speed, and an admin console built for insight. What each role can do is enforced on the server, not just hidden in the interface.</p>
+
+      <h3>Roles and permissions</h3>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>Capability</th><th>QA reviewer</th><th>Admin</th><th>Later: team leader / agent</th></tr></thead>
+        <tbody>
+          <tr><td>Score calls</td><td>Yes</td><td>Yes</td><td>—</td></tr>
+          <tr><td>Change a submitted evaluation</td><td>Own, for 24 hours</td><td>Any, with a logged reason</td><td>—</td></tr>
+          <tr><td>See own reviews and weekly progress</td><td>Yes</td><td>Yes</td><td>Own scores and feedback</td></tr>
+          <tr><td>Read the Playbook</td><td>Yes</td><td>Yes</td><td>Yes</td></tr>
+          <tr><td>Dashboards, agent profiles, exports</td><td>—</td><td>Yes</td><td>Own team</td></tr>
+          <tr><td>AI features</td><td>Tidy own notes</td><td>All</td><td>—</td></tr>
+          <tr><td>Scorecard rules and thresholds</td><td>—</td><td>Yes</td><td>—</td></tr>
+          <tr><td>Accounts, agents, sites; audit log</td><td>—</td><td>Yes</td><td>—</td></tr>
+        </tbody>
+      </table></div>
+
+      <h3>Pages</h3>
+      <div class="grid-3">
+        <div class="panel"><span class="eyebrow">Public</span><ul><li>Home: what TMQ is and how it works</li><li>The standard: the four pillars, at a high level</li><li>Sign in</li><li>Privacy notice for agents and staff</li></ul></div>
+        <div class="panel"><span class="eyebrow">Reviewer workspace</span><ul><li>Today: queue, weekly target, drafts</li><li>Review Studio</li><li>My reviews</li><li>Playbook</li><li>Account and password</li></ul></div>
+        <div class="panel"><span class="eyebrow">Admin console</span><ul><li>Overview dashboard</li><li>Agents and agent profiles</li><li>Evaluations explorer</li><li>Sites, teams and reviewers</li><li>AI insights</li><li>Scorecard and rules</li><li>Users, audit log, import and export</li></ul></div>
+      </div>
+
+      <h3>Review Studio: the reviewer’s form</h3>
+      <div class="prose">
+        <p>Most of a reviewer’s time goes on listening, so the form must never slow them down. It fits on one screen, works from the keyboard, and is forgiving of mistakes.</p>
+        <ul>
+          <li><strong>Start from the portal.</strong> Paste one row or ten from the recordings table. Each becomes a queued call with agent, site, time, duration and a masked number already filled in. Unknown agents are flagged for an admin to confirm.</li>
+          <li><strong>Call type sets sensible defaults.</strong> Choosing Booking, Airport, Account, Enquiry, Complaint or Cancellation pre-selects N/A where a criterion can’t apply. For example, Airport is N/A unless it’s an airport job.</li>
+          <li><strong>One tap per criterion</strong>, with keys 1–4 for Yes / Partial / No / N/A, arrow keys to move, and Ctrl+Enter to submit.</li>
+          <li><strong>The rubric beside the question.</strong> An info button opens that criterion’s Yes / Partial / No descriptions and marker notes, so there’s no switching to another sheet.</li>
+          <li><strong>Partial or No asks what happened.</strong> The reviewer adds a short note and an optional timestamp such as <code>01:12</code>, which makes the feedback specific enough to coach from.</li>
+          <li><strong>Zero-tolerance panel set apart in red.</strong> It allows several issues, needs a note, and warns “this call will score 0%”.</li>
+          <li><strong>Live score, band and deductions</strong>, exactly as in the section 3 demo.</li>
+          <li><strong>Autosaved drafts</strong>, a warning if the same call was already reviewed, and “Next call” to work through the queue.</li>
+        </ul>
+      </div>
+      <figure>
+        <div class="fig-body paste">
+          <label class="eyebrow" for="paste-in">Smart paste · edit these example rows</label>
+          <textarea id="paste-in" spellcheck="false">Queue	561 / 1465 - Omar Siddiqui - BIRPK - BE	07700900123	2026-08-31 02:12:07	00:01:25	» Play « » Download « » Email «
+Queue	557 / 1472 - Sarah Patel - SOL - DE	07700900456	2026-08-31 02:28:43	00:02:46	» Play « » Download « » Email «
+Queue	551 / 1480 - Dan Carter - NUN - DE	07700900789	2026-09-01 14:05:10	00:03:12	» Play « » Download « » Email «
+Exten	James Ellis - BIR - BE	Omar Siddiqui - BIRPK - BE	2026-08-31 02:57:57	00:00:10	» Play « » Download « » Email «</textarea>
+          <div class="tbl-wrap" style="margin:0"><table>
+            <thead><tr><th class="num">#</th><th>Agent</th><th>Site</th><th>Caller</th><th>Call time</th><th class="num">Duration</th><th>Status</th></tr></thead>
+            <tbody id="paste-out"><tr><td colspan="7" class="muted">Parsing…</td></tr></tbody>
+          </table></div>
+        </div>
+        <figcaption>Rows in the same shape as the portal table, with made-up names and Ofcom’s reserved drama numbers. Each row splits into the call details, the caller number is masked before it is saved, and the call is filed under its week (w/c Monday). Internal extension calls are skipped by default.</figcaption>
+      </figure>
+
+      <h3>Playbook</h3>
+      <div class="prose">
+        <p>The rubric, the zero-tolerance list and the marker notes become a searchable guide, linked from every question in the form and printable in place of the Print Version sheet. It includes the greeting rule: <strong>approved</strong> names are “Take Me” and “Great Barr”; <strong>not approved</strong> are “Tower”, “Taxi First”, “Take Me Taxi(s)” and “Take Me Cab”. Take Me grows by buying local firms, so old brand names are a live risk and deserve a prominent place. The paraphrase rule, “Location + Street or Area”, and examples of good calls sit alongside.</p>
+      </div>
+
+      <h3>Admin dashboard</h3>
+      <div class="prose"><p>Filters sit in one row at the top: week (default: last full week, compared with the week before), site, team, reviewer and call type. Every number links through to the calls behind it.</p></div>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>Widget</th><th>The question it answers</th></tr></thead>
+        <tbody>
+          <tr><td>KPI row</td><td>How did we do this week? Average QC score and its change, evaluations, share meeting KPI, auto-fails, average AHT, review coverage against target.</td></tr>
+          <tr><td>Weekly trend by site</td><td>Are Solihull, Birmingham and Nuneaton improving? Twelve weeks, with the 90% KPI line drawn in.</td></tr>
+          <tr><td>Section performance</td><td>Which part of the call is weakest: greeting, booking, handling or closure?</td></tr>
+          <tr><td>Criteria heatmap</td><td>Where are the training needs? All 21 criteria by agent or site, e.g. a whole team asking callers to spell well-known places.</td></tr>
+          <tr><td>Zero-tolerance log</td><td>Which breaches happened, where and when? Each one opens its call.</td></tr>
+          <tr><td>Agents needing attention</td><td>Who needs coaching now? More than 15% of calls below KPI, two falling weeks in a row, or any auto-fail.</td></tr>
+          <tr><td>Score distribution</td><td>Is marking realistic? A spike at 100% is a calibration question, not a celebration.</td></tr>
+          <tr><td>Reviewer calibration</td><td>Is each reviewer marking to the same standard? Each reviewer’s average against the team’s, plus volume and time per review.</td></tr>
+          <tr><td>AI weekly briefing</td><td>What should I know in 30 seconds? A saved Gemini summary of the week (section 6).</td></tr>
+        </tbody>
+      </table></div>
+
+      <h3>Agent profile</h3>
+      <div class="prose"><p>The page a manager opens before a one-to-one. It shows current score and band, a weekly trend, section scores against the team average, strongest and weakest criteria, any zero-tolerance history, AHT over time, and every evaluation with the reviewer’s notes. A dated history of AI coaching summaries sits alongside, and <strong>Export for 1:1</strong> produces a clean PDF.</p></div>
+
+      <h3>Evaluations explorer</h3>
+      <div class="prose"><p>Every evaluation in one table. Filter by agent, reviewer, site, date, score range, band, zero-tolerance type or “any No on criterion X”, search the comments, and save views. <strong>Export to Excel or CSV</strong> is the safety net: anyone who still wants a spreadsheet can have one, generated from clean data.</p></div>
+
+      <h3>Scorecard and rules</h3>
+      <div class="prose"><p>This is the settings page the sheet never had. Every threshold is editable, and a change publishes a <strong>new scorecard version</strong>. Past evaluations keep the version they were marked under. Before publishing, a <em>what-if preview</em> re-scores the last four weeks under the draft rules, so a manager can see the effect of moving the KPI line or a deduction before anyone’s score changes.</p></div>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>Setting</th><th>Today (from the sheet)</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td>KPI pass mark</td><td>Above 90% (90.00% is below KPI)</td><td>Kept, editable</td></tr>
+          <tr><td>Perfect score</td><td>100%</td><td>Kept</td></tr>
+          <tr><td>Agent needs attention</td><td>More than 15% of calls below KPI</td><td>Kept, editable</td></tr>
+          <tr><td>Answer points</td><td>Yes 1 · Partial 0.5 · No 0 · N/A excluded</td><td>Kept, editable</td></tr>
+          <tr><td>Critical deductions</td><td>5 criteria, No −2 / Partial −1 (section 3)</td><td>Kept, editable per criterion</td></tr>
+          <tr><td>Zero-tolerance issues</td><td>11 issues, each forces 0%</td><td>Kept; list editable</td></tr>
+          <tr><td>Weekly review target</td><td>10 calls per agent (what the current data shows)</td><td>New, editable</td></tr>
+          <tr><td>Score floor</td><td>None (scores can go negative)</td><td>New: 0%, pending Q7</td></tr>
+          <tr><td>Reviewer edit window</td><td>None (anyone can edit anything)</td><td>New: 24 hours</td></tr>
+        </tbody>
+      </table></div>
+
+      <h3>Metrics dictionary</h3>
+      <div class="prose"><p>One definition per number, used by every chart and export. A week runs Monday 00:00 to Sunday 23:59 UK time and is decided by <em>call</em> date, not review date (Q4).</p></div>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>Metric</th><th>Definition</th></tr></thead>
+        <tbody>
+          <tr><td>QC score</td><td>Mean of evaluation scores in the period, weighted by call</td></tr>
+          <tr><td>KPI attainment</td><td>Evaluations above 90% ÷ all evaluations</td></tr>
+          <tr><td>Below-KPI share</td><td>Evaluations at 90% or under ÷ all evaluations (the sheet’s “Below KPI Score”)</td></tr>
+          <tr><td>Auto-fail rate</td><td>Evaluations with at least one zero-tolerance issue ÷ all evaluations</td></tr>
+          <tr><td>Perfect rate</td><td>Evaluations at exactly 100% ÷ all evaluations</td></tr>
+          <tr><td>Section score</td><td>Mean of section scores where that section was scored (no deductions)</td></tr>
+          <tr><td>Criterion pass rate</td><td>Yes ÷ (Yes + Partial + No) for one criterion</td></tr>
+          <tr><td>Average AHT</td><td>Mean duration of the evaluated calls</td></tr>
+          <tr><td>Coverage</td><td>Agents who reached the weekly review target ÷ active agents</td></tr>
+          <tr><td>Reviewer variance</td><td>A reviewer’s mean score minus the team mean on comparable calls</td></tr>
+        </tbody>
+      </table></div>
+
+      <h3>Home page and sign-in</h3>
+      <div class="prose">
+        <p>The public site borrows Take Me’s own voice and look. Its hero line, <strong>“Listen. Score. Coach.”</strong>, echoes the brand’s “Tap. Ride. Arrive.” Below it come the four pillars of the framework (First Impressions, Booking Accuracy, Customer Care, Confident Closure), how the programme works, the zero-tolerance promise at a high level, and a sign-in button. No live figures appear on public pages, and the whole site is marked <code>noindex</code>.</p>
+        <p>Sign-in is a split screen: a black brand panel with the blue speech-bubble motif on one side, a plain form on the other. There is no sign-up link; “Forgot password?” says to ask an admin. After a fixed period of inactivity, sessions end on their own, which matters on shared call-centre PCs.</p>
+      </div>
+      <div class="grid-2">
+        <div class="panel"><h4>Brand system (from Take Me’s published brand guide)</h4><ul><li>Blue <code>#00A6EB</code> and Cyan <code>#45C6FF</code> on black and white</li><li>Baloo 2 for headings, as on takeme.taxi</li><li>LOEW is the brand’s primary face and is licensed: we need the font files from the company, and use a free near-match until then</li><li>Pill buttons, 12px card corners, speech-bubble shapes</li></ul></div>
+        <div class="panel"><h4>Product standards</h4><ul><li>Light and dark themes</li><li>WCAG 2.2 AA: every status shows an icon and a label, not colour alone</li><li>Fully keyboard-operable scoring</li><li>Admin views work on a tablet or phone</li></ul></div>
+      </div>
+    </section>
+
+    <section id="ai">
+      <div class="sec-head"><span class="sec-num">Section 6</span><h2>AI with Gemini</h2></div>
+      <p class="lede">Listening and scoring stay human. Gemini does the writing and pattern-spotting around them, and a person approves anything that reaches an agent.</p>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>Feature</th><th>What it does</th><th>For</th><th>Phase</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Agent coaching summary</strong></td><td>Weekly per agent: a summary of the reviewer notes, two strengths, one or two practical tips and a focus criterion. Returned as structured data in UK English, keeping the “no dashes” house style from today’s prompt.</td><td>Admin</td><td><span class="chip phase">P2</span></td></tr>
+          <tr><td><strong>Weekly briefing</strong></td><td>The week in five bullets: who moved, any breaches, recurring themes, coverage gaps.</td><td>Admin</td><td><span class="chip phase">P2</span></td></tr>
+          <tr><td><strong>Tidy my notes</strong></td><td>Turns a reviewer’s rough notes into clear, specific feedback, which the reviewer accepts or edits.</td><td>Reviewer</td><td><span class="chip phase">P2</span></td></tr>
+          <tr><td><strong>Theme finder</strong></td><td>Groups comments across calls into recurring issues (“postcode requests for supermarkets”), with counts and example calls.</td><td>Admin</td><td><span class="chip phase">P2</span></td></tr>
+          <tr><td><strong>Ask TMQ</strong></td><td>Plain-English questions such as “who was below KPI two weeks running?” Answers come from a fixed set of safe, pre-written queries; the model never writes SQL.</td><td>Admin</td><td><span class="chip phase p3">P3</span></td></tr>
+          <tr><td><strong>Transcripts and suggested scores</strong></td><td>Only after a data-protection impact assessment and sign-off: Gemini transcribes a recording and suggests answers with quotes, and the reviewer still makes every decision.</td><td>Reviewer</td><td><span class="chip phase p3">Later</span></td></tr>
+        </tbody>
+      </table></div>
+      <h3>Guardrails</h3>
+      <div class="prose"><ul>
+        <li><strong>The key never reaches the browser.</strong> It lives in server environment variables, and every request goes browser → our server → Gemini.</li>
+        <li><strong>Send the minimum.</strong> Customer numbers, addresses and names are never sent. Agents are referred to by first name or ID.</li>
+        <li><strong>Use a paid, billing-enabled Gemini key.</strong> Google’s terms allow it to use content sent through unpaid tiers to improve its products, which is not acceptable for staff performance data.</li>
+        <li><strong>Notes are data, not instructions.</strong> Prompt templates keep reviewer text separate from instructions, and every output is checked against a schema and a length limit.</li>
+        <li><strong>Everything is saved.</strong> Each output is stored with its model, prompt version, input fingerprint and requester. Identical inputs reuse the saved answer, and daily per-user quotas cap spend.</li>
+        <li><strong>Labelled and editable.</strong> Output is marked “AI-generated”, admins can edit prompt templates (starting from today’s <code>=AI()</code> prompt), and the model name is a setting, not code.</li>
+      </ul></div>
+    </section>
+
+    <section id="stack">
+      <div class="sec-head"><span class="sec-num">Section 7</span><h2>Architecture and stack</h2></div>
+      <figure>
+        <div class="fig-body">
+          <svg class="diagram" viewBox="0 0 1000 340" role="img" aria-label="Requests go from the browser over HTTPS to Vercel in London. A proxy checks sign-in, pages and server actions call the data access layer, which re-checks role and input before querying Neon Postgres. Scoring runs in a tested engine, Better Auth manages sessions, and an AI service calls Gemini with a server-side key.">
+            <defs>
+              <marker id="ah2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="arrowhead" d="M0,0 L10,5 L0,10 z"/></marker>
+              <marker id="ahh2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="arrowhead hot" d="M0,0 L10,5 L0,10 z"/></marker>
+            </defs>
+            <rect class="lane" x="188" y="96" width="562" height="236" rx="16"/>
+            <text class="lane-t" x="206" y="120">VERCEL · FUNCTIONS IN LONDON (lhr1)</text>
+            <rect class="box" x="10" y="136" width="140" height="60" rx="10"/><text class="ttl" x="80" y="162" text-anchor="middle">Browser</text><text class="sub" x="80" y="180" text-anchor="middle">reviewer · admin</text>
+            <rect class="box" x="205" y="136" width="140" height="60" rx="10"/><text class="ttl" x="275" y="162" text-anchor="middle">proxy.ts</text><text class="sub" x="275" y="180" text-anchor="middle">first gate only</text>
+            <rect class="box" x="400" y="136" width="140" height="60" rx="10"/><text class="ttl" x="470" y="162" text-anchor="middle">Pages &amp; actions</text><text class="sub" x="470" y="180" text-anchor="middle">server-rendered</text>
+            <rect class="box hot" x="595" y="136" width="140" height="60" rx="10"/><text class="ttl" x="665" y="162" text-anchor="middle">Data access layer</text><text class="sub" x="665" y="180" text-anchor="middle">role check + Zod</text>
+            <rect class="box" x="800" y="136" width="180" height="60" rx="10"/><text class="ttl" x="890" y="162" text-anchor="middle">Neon Postgres</text><text class="sub" x="890" y="180" text-anchor="middle">London · restore points</text>
+            <rect class="box" x="205" y="250" width="140" height="60" rx="10"/><text class="ttl" x="275" y="276" text-anchor="middle">Better Auth</text><text class="sub" x="275" y="294" text-anchor="middle">sessions · 2FA</text>
+            <rect class="box" x="400" y="250" width="140" height="60" rx="10"/><text class="ttl" x="470" y="276" text-anchor="middle">Scoring engine</text><text class="sub" x="470" y="294" text-anchor="middle">tested vs the sheet</text>
+            <rect class="box" x="595" y="250" width="140" height="60" rx="10"/><text class="ttl" x="665" y="276" text-anchor="middle">AI service</text><text class="sub" x="665" y="294" text-anchor="middle">AI SDK · quotas</text>
+            <rect class="box" x="800" y="250" width="180" height="60" rx="10"/><text class="ttl" x="890" y="276" text-anchor="middle">Gemini API</text><text class="sub" x="890" y="294" text-anchor="middle">server key · no PII</text>
+            <rect class="box dash" x="800" y="20" width="180" height="56" rx="10"/><text class="ttl" x="890" y="44" text-anchor="middle">Resend</text><text class="sub" x="890" y="62" text-anchor="middle">later: digests · alerts</text>
+            <line class="edge" x1="150" y1="166" x2="201" y2="166" marker-end="url(#ah2)"/><text class="lbl" x="176" y="158" text-anchor="middle">HTTPS</text>
+            <line class="edge" x1="345" y1="166" x2="396" y2="166" marker-end="url(#ah2)"/><text class="lbl" x="371" y="158" text-anchor="middle">pass</text>
+            <line class="edge hot" x1="540" y1="166" x2="591" y2="166" marker-end="url(#ahh2)"/><text class="lbl" x="566" y="158" text-anchor="middle">calls</text>
+            <line class="edge hot" x1="735" y1="166" x2="796" y2="166" marker-end="url(#ahh2)"/><text class="lbl" x="766" y="158" text-anchor="middle">SQL · TLS</text>
+            <line class="edge" x1="275" y1="196" x2="275" y2="246" marker-end="url(#ah2)"/><text class="lbl" x="283" y="226">session</text>
+            <line class="edge" x1="470" y1="196" x2="470" y2="246" marker-end="url(#ah2)"/><text class="lbl" x="478" y="226">score</text>
+            <line class="edge" x1="665" y1="196" x2="665" y2="246" marker-end="url(#ah2)"/><text class="lbl" x="673" y="226">summarise</text>
+            <line class="edge" x1="735" y1="280" x2="796" y2="280" marker-end="url(#ah2)"/><text class="lbl" x="766" y="272" text-anchor="middle">prompt</text>
+            <polyline class="edge" points="700,136 700,48 796,48" stroke-dasharray="5 4" marker-end="url(#ah2)"/><text class="lbl" x="708" y="80">email</text>
+          </svg>
+        </div>
+        <figcaption>The highlighted path is the security boundary. Every read and write re-checks session and role in the data access layer, because a proxy/middleware check on its own can be bypassed, as the 2025 Next.js middleware flaw (CVE-2025-29927) showed. Locally, the same code runs against Postgres 17 in Docker.</figcaption>
+      </figure>
+
+      <h3>Stack</h3>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>Layer</th><th>Choice</th><th>Why</th></tr></thead>
+        <tbody>
+          <tr><td>Framework</td><td>Next.js (App Router, TypeScript)</td><td>One codebase for pages, server actions and APIs; first-class on Vercel</td></tr>
+          <tr><td>Interface</td><td>Tailwind CSS, shadcn/ui (Radix), Motion</td><td>Accessible components we own and theme to Take Me</td></tr>
+          <tr><td>Charts, tables</td><td>Recharts via shadcn charts, TanStack Table</td><td>Trends, bars, radar and heatmaps; sortable, filterable tables</td></tr>
+          <tr><td>Forms</td><td>React Hook Form + Zod</td><td>One schema validates in the browser and again on the server</td></tr>
+          <tr><td>Database</td><td>PostgreSQL 17 on Neon (London)</td><td>Relational data with strong reporting SQL; the free tier fits this volume for years</td></tr>
+          <tr><td>ORM, migrations</td><td>Drizzle ORM + drizzle-kit</td><td>Typed SQL, light on serverless, readable migration files</td></tr>
+          <tr><td>Auth</td><td>Better Auth: email + password, admin and 2FA plugins</td><td>Admin-created accounts, roles, bans, session revocation; public sign-up switched off</td></tr>
+          <tr><td>AI</td><td>Vercel AI SDK with Google Gemini</td><td>Schema-checked output, streaming, and a model change is a config change</td></tr>
+          <tr><td>Import, export</td><td>ExcelJS, CSV, print CSS / PDF</td><td>Load the existing workbooks; give anyone a spreadsheet when they ask</td></tr>
+          <tr><td>Quality</td><td>Vitest, Playwright, ESLint, GitHub Actions</td><td>The worked examples become permanent tests, plus end-to-end role checks</td></tr>
+          <tr><td>Later</td><td>Resend (email), Sentry (errors)</td><td>Weekly digests and breach alerts; error tracking without PII</td></tr>
+        </tbody>
+      </table></div>
+
+      <h3>Where the database lives</h3>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>Option</th><th>Strengths</th><th>Watch-outs</th><th>Verdict</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Neon Postgres, London</strong></td><td>One-click Vercel Marketplace setup, a database branch per preview deploy, scale-to-zero, point-in-time restore, plain Postgres</td><td>Brief wake-up after idle on the free tier</td><td><strong>Recommended</strong></td></tr>
+          <tr><td>Supabase, London</td><td>Postgres plus auth, file storage and a dashboard</td><td>Its auth would duplicate ours; more than we need today. The natural pick later if we store call audio.</td><td>Strong alternative</td></tr>
+          <tr><td>Own server / VPS</td><td>Full control</td><td>Patching, backups and security all fall on us</td><td>Local development only</td></tr>
+          <tr><td>Firebase or MongoDB</td><td>Quick to start</td><td>Awkward for relational reporting and SQL analytics</td><td>Not recommended</td></tr>
+        </tbody>
+      </table></div>
+
+      <h3>Environments</h3>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>Environment</th><th>Database</th><th>Address</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td>Local</td><td>Postgres 17 in Docker (<code>docker compose up</code>)</td><td class="mono">localhost:3000</td><td>A seed script creates an admin, a reviewer, the sites and example agents</td></tr>
+          <tr><td>Preview</td><td>A Neon branch per pull request</td><td class="mono">*.vercel.app</td><td>Protected by Vercel sign-in; example data only; safe place to test migrations</td></tr>
+          <tr><td>Production</td><td>Neon main branch, London</td><td>Custom domain later, e.g. <code>qa.takeme.taxi</code> (needs IT)</td><td>Real data and backups. Vercel’s Hobby plan is for personal, non-commercial use, so production needs Pro under a company-owned team.</td></tr>
+        </tbody>
+      </table></div>
+    </section>
+
+    <section id="data">
+      <div class="sec-head"><span class="sec-num">Section 8</span><h2>Data model</h2></div>
+      <div class="ents">
+        <div class="ent"><h4>users</h4><ul><li>name, email, password_hash</li><li><b>role</b> admin | qa</li><li>status, must_change_password</li></ul></div>
+        <div class="ent"><h4>sessions · login_attempts</h4><ul><li>token hash, expiry, last seen</li><li>failed logins per email/IP</li></ul></div>
+        <div class="ent"><h4>sites · agents</h4><ul><li>site code (SOL, BIR, NUN…)</li><li>agent, team code, portal name</li><li>status active | pending | inactive</li></ul></div>
+        <div class="ent"><h4>scorecard_versions</h4><ul><li>version, status, settings (KPI, target, floor)</li><li>sections · criteria · hihi_issues</li></ul></div>
+        <div class="ent"><h4>evaluations</h4><ul><li>agent, reviewer, version, call type</li><li>call time, <b>week</b>, duration, masked caller</li><li>score, band, section scores, feedback</li></ul></div>
+        <div class="ent"><h4>answers · issues</h4><ul><li>answer yes | partial | no | na, note</li><li>zero-tolerance issue + note</li></ul></div>
+        <div class="ent"><h4>ai_summaries · audit_log</h4><ul><li>kind, model, prompt version, output</li><li>actor, action, before, after</li></ul></div>
+      </div>
+    </section>
+
+    <section id="security">
+      <div class="sec-head"><span class="sec-num">Section 9</span><h2>Security and privacy</h2></div>
+      <div class="prose"><ul>
+        <li>No public sign-up; admin-created accounts; temporary password changed at first sign-in; bcrypt hashes.</li>
+        <li>httpOnly, Secure, SameSite session cookies; idle timeout; revoke on disable; login rate limiting.</li>
+        <li>Role checks in the server data layer for every action; Zod validation; parameterised SQL.</li>
+        <li>Caller numbers masked on entry and only a keyed hash stored; data hosted in London.</li>
+        <li>Append-only audit log; soft delete; security headers (CSP, HSTS, frame-ancestors none).</li>
+        <li>Gemini key server-side only; no customer data sent; outputs saved and labelled.</li>
+      </ul></div>
+    </section>
+
+    <section id="plan">
+      <div class="sec-head"><span class="sec-num">Section 10</span><h2>Delivery plan</h2></div>
+      <div class="phases">
+        <div class="phase"><div class="when"><b>P1</b><span>Build now</span></div><div><h4>Replace the spreadsheet</h4><ul><li>Auth, roles, users</li><li>Scoring engine + tests</li><li>Smart paste + manual entry</li><li>Review Studio, My reviews, Playbook</li><li>Admin dashboard, agent profiles</li><li>Explorer + Excel/CSV export</li><li>Scorecard rules with versions</li><li>Import of existing workbook</li></ul><p class="done">Done when a reviewer can score a pasted call and the admin sees it on the dashboard.</p></div></div>
+        <div class="phase"><div class="when"><b>P2</b><span>Next</span></div><div><h4>Insight and AI</h4><ul><li>Gemini coaching summaries</li><li>Weekly briefing, theme finder</li><li>Tidy my notes</li><li>What-if rule preview</li></ul><p class="done">Done when summaries are saved, approved and exportable.</p></div></div>
+        <div class="phase"><div class="when"><b>P3</b><span>Later</span></div><div><h4>Workflow</h4><ul><li>Calibration and disputes</li><li>Coaching tasks, email alerts</li><li>Team leader and agent views</li><li>Call audio and transcripts</li></ul><p class="done">Done when the coaching loop runs inside the platform.</p></div></div>
+      </div>
+    </section>
+
+    <section id="beyond">
+      <div class="sec-head"><span class="sec-num">Section 11</span><h2>What you might be missing</h2></div>
+      <div class="prose"><ul>
+        <li><strong>Calibration:</strong> reviewers marking the same call to align standards.</li>
+        <li><strong>Disputes and acknowledgement:</strong> agents or leaders can challenge a score.</li>
+        <li><strong>Coaching loop:</strong> a below-KPI or breach creates a follow-up task.</li>
+        <li><strong>Sampling plan:</strong> a weekly target and a mix of short and long calls.</li>
+        <li><strong>Time zones:</strong> store UTC, show UK time, weeks by call date.</li>
+        <li><strong>Retention:</strong> how long call identifiers and scores are kept.</li>
+      </ul></div>
+    </section>
+
+    <section id="questions">
+      <div class="sec-head"><span class="sec-num">Section 12</span><h2>Open questions</h2></div>
+      <ol class="qs">
+        <li><span class="qn">Q1</span><h4>Which sites are in scope?</h4><p class="def"><b>Default:</b> Solihull, Birmingham, Nuneaton, Great Barr; more can be added.</p></li>
+        <li><span class="qn">Q2</span><h4>What do the team codes (DE, BE) and BIRPK mean?</h4><p class="def"><b>Default:</b> stored as a team code on the agent.</p></li>
+        <li><span class="qn">Q3</span><h4>Can we keep full caller numbers?</h4><p class="def"><b>Default:</b> masked plus a keyed hash only.</p></li>
+        <li><span class="qn">Q4</span><h4>Report by call week or review week?</h4><p class="def"><b>Default:</b> call week, Monday to Sunday, UK time.</p></li>
+        <li><span class="qn">Q5</span><h4>Who else needs accounts?</h4><p class="def"><b>Default:</b> admins and QA reviewers.</p></li>
+        <li><span class="qn">Q6</span><h4>How long can reviewers edit their own reviews?</h4><p class="def"><b>Default:</b> 24 hours.</p></li>
+        <li><span class="qn">Q7</span><h4>Floor scores at 0%, and is 90.00% below KPI?</h4><p class="def"><b>Default:</b> floor at 0%; 90.00% stays below KPI.</p></li>
+        <li><span class="qn">Q8</span><h4>Is the Gemini key on a paid plan?</h4><p class="def"><b>Default:</b> AI features stay off until a key is added.</p></li>
+      </ol>
+    </section>
+  </main>
+</div>
+<footer>TMQ · Take Me Quality · Platform plan, September 2026</footer>
+  </main>
+</div>
