@@ -20,6 +20,7 @@ import {
 import { agentCoaching, approveSummary, editCoaching, findThemes, weeklyBriefing } from "@/server/services/ai";
 import { importWorkbook } from "@/server/services/import";
 import { isValidIsoDate } from "@/lib/dates";
+import { replaceReviewerAssignments } from "@/server/services/assignments";
 
 const uuid = z.string().uuid();
 const role = z.enum(["admin", "qa"]);
@@ -63,6 +64,20 @@ export async function signOutEverywhereAction(id: string) {
     const actor = await actorFor("admin");
     await signOutEverywhere(actor, uuid.parse(id));
     return true;
+  });
+}
+
+export async function saveReviewerAssignmentsAction(id: string, input: { siteIds: string[]; agentIds: string[] }) {
+  return runAction(async () => {
+    const actor = await actorFor("admin");
+    const assignments = z
+      .object({ siteIds: z.array(uuid).max(250), agentIds: z.array(uuid).max(2_000) })
+      .parse(input);
+    const result = await replaceReviewerAssignments(actor, uuid.parse(id), assignments);
+    revalidatePath("/admin/users");
+    revalidatePath("/qa");
+    revalidatePath("/qa/new");
+    return result;
   });
 }
 

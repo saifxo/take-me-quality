@@ -7,6 +7,7 @@ import { makeUser, resetTestDb } from "./helpers/db";
 import { signIn, validateSessionToken, revokeUserSessions } from "@/server/services/auth";
 import { createUser, resetPassword, updateUser, changeOwnPassword } from "@/server/services/users";
 import { createAgent, listAgents, matchPortalNames } from "@/server/services/roster";
+import { replaceReviewerAssignments } from "@/server/services/assignments";
 import {
   createManual,
   deleteReview,
@@ -51,6 +52,7 @@ beforeAll(async () => {
   const [sol] = await db.select().from(sites).where(eq(sites.code, "SOL"));
   solId = sol.id;
   await db.insert(agents).values({ fullName: "Demo Ava Stone", siteId: solId, teamCode: "DE", extension: "1465" });
+  await replaceReviewerAssignments(admin.actor, qa.user.id, { siteIds: [solId], agentIds: [] });
 });
 
 describe("authentication", () => {
@@ -117,6 +119,23 @@ describe("role checks in the service layer", () => {
     expect(a.status).toBe("pending");
     const b = await createAgent(admin.actor, { fullName: "Admin Added", siteId: solId });
     expect(b.status).toBe("active");
+  });
+
+  it("limits reviewers to assigned sites and agents", async () => {
+    const [ava] = await db.select({ id: agents.id }).from(agents).where(eq(agents.fullName, "Demo Ava Stone"));
+    const [bir] = await db.select({ id: sites.id }).from(sites).where(eq(sites.code, "BIR"));
+    const other = await createAgent(admin.actor, { fullName: "Demo Rowan Hill", siteId: bir.id });
+
+    await expect(createManual(qa2.actor, { agentId: ava.id, callAt: new Date(), durationSec: 60, callType: "booking" })).rejects.toThrow(/isn’t assigned/);
+    await replaceReviewerAssignments(admin.actor, qa2.user.id, { siteIds: [], agentIds: [ava.id] });
+    await expect(createManual(qa2.actor, { agentId: ava.id, callAt: new Date(), durationSec: 60, callType: "booking" })).resolves.toMatchObject({ id: expect.any(String) });
+    await expect(createManual(qa2.actor, { agentId: other.id, callAt: new Date(), durationSec: 60, callType: "booking" })).rejects.toThrow(/isn’t assigned/);
+
+    await replaceReviewerAssignments(admin.actor, qa2.user.id, { siteIds: [bir.id], agentIds: [other.id] });
+    const visible = await listAgents({ reviewerId: qa2.user.id });
+    expect(visible.map((a) => a.fullName)).toEqual(["Demo Rowan Hill"]);
+    await expect(createAgent(qa2.actor, { fullName: "Demo Future Agent", siteId: bir.id })).resolves.toMatchObject({ status: "pending" });
+    await expect(createAgent(qa2.actor, { fullName: "Not In Solihull", siteId: solId })).rejects.toThrow(/site assigned/);
   });
 });
 

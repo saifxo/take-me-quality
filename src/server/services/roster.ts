@@ -5,13 +5,15 @@ import { agents, evaluations, sites } from "@/db/schema";
 import { nameKey } from "@/lib/smart-paste";
 import { audit, type Actor } from "@/server/audit";
 import { AppError, forbidden, notFound } from "@/server/errors";
+import { assertCanCreateAgentAtSite, reviewerAgentCondition, reviewerSiteCondition } from "./assignments";
 
 function assertAdmin(actor: Actor) {
   if (actor.role !== "admin") throw forbidden();
 }
 
 // ---------------------------------------------------------------- sites
-export async function listSites(opts: { activeOnly?: boolean } = {}) {
+export async function listSites(opts: { activeOnly?: boolean; reviewerId?: string } = {}) {
+  const conds = [opts.activeOnly ? eq(sites.active, true) : undefined, opts.reviewerId ? reviewerSiteCondition(opts.reviewerId) : undefined].filter(Boolean);
   return db
     .select({
       id: sites.id,
@@ -22,7 +24,7 @@ export async function listSites(opts: { activeOnly?: boolean } = {}) {
       agents: sql<number>`(select count(*)::int from ${agents} a where a.site_id = ${sites.id} and a.status <> 'inactive')`,
     })
     .from(sites)
-    .where(opts.activeOnly ? eq(sites.active, true) : undefined)
+    .where(conds.length ? and(...conds) : undefined)
     .orderBy(asc(sites.name));
 }
 
@@ -54,10 +56,11 @@ export async function updateSite(actor: Actor, id: string, input: { name: string
 // ---------------------------------------------------------------- agents
 export type AgentListItem = Awaited<ReturnType<typeof listAgents>>[number];
 
-export async function listAgents(opts: { siteId?: string; status?: "active" | "pending" | "inactive"; includeInactive?: boolean } = {}) {
+export async function listAgents(opts: { siteId?: string; status?: "active" | "pending" | "inactive"; includeInactive?: boolean; reviewerId?: string } = {}) {
   const conds = [
     opts.siteId ? eq(agents.siteId, opts.siteId) : undefined,
     opts.status ? eq(agents.status, opts.status) : opts.includeInactive ? undefined : inArray(agents.status, ["active", "pending"]),
+    opts.reviewerId ? reviewerAgentCondition(opts.reviewerId) : undefined,
   ].filter(Boolean);
   return db
     .select({
@@ -104,6 +107,7 @@ export async function createAgent(actor: Actor, input: AgentInput) {
   const status = actor.role === "admin" ? (input.status ?? "active") : "pending";
   const [site] = await db.select({ id: sites.id }).from(sites).where(eq(sites.id, input.siteId)).limit(1);
   if (!site) throw notFound("Pick a valid site for this agent.");
+  await assertCanCreateAgentAtSite(actor, site.id);
   const existing = await findAgentByName(input.fullName, input.siteId);
   if (existing) return existing;
   const [row] = await db
@@ -150,9 +154,12 @@ export async function findAgentByName(fullName: string, siteId?: string) {
 }
 
 /** Match portal agent names (and site codes) to the roster. */
-export async function matchPortalNames(entries: { agentName: string; siteCode: string | null }[]) {
+export async function matchPortalNames(entries: { agentName: string; siteCode: string | null }[], reviewerId?: string) {
   const [roster, siteRows] = await Promise.all([
-    db.select({ id: agents.id, fullName: agents.fullName, siteId: agents.siteId, status: agents.status }).from(agents),
+    db
+      .select({ id: agents.id, fullName: agents.fullName, siteId: agents.siteId, status: agents.status })
+      .from(agents)
+      .where(reviewerId ? reviewerAgentCondition(reviewerId) : undefined),
     db.select({ id: sites.id, code: sites.code, name: sites.name }).from(sites),
   ]);
   const siteByCode = new Map(siteRows.map((s) => [s.code.toUpperCase(), s]));

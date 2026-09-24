@@ -5,7 +5,18 @@
  */
 import { sql, type SQL } from "drizzle-orm";
 import { db } from "@/db";
-import { agents, criteria, evaluationAnswers, evaluationIssues, evaluations, hihiIssues, sites, users } from "@/db/schema";
+import {
+  agents,
+  criteria,
+  evaluationAnswers,
+  evaluationIssues,
+  evaluations,
+  hihiIssues,
+  reviewerAgentAssignments,
+  reviewerSiteAssignments,
+  sites,
+  users,
+} from "@/db/schema";
 import { addDays } from "@/lib/dates";
 import { getActiveScorecard } from "./scorecard";
 
@@ -308,14 +319,23 @@ export async function reviewerCalibration(f: DashFilter) {
 }
 
 // ---------------------------------------------------------------- coverage (reviews per agent this week)
-export async function weeklyCoverage(week: string, siteId?: string) {
+export async function weeklyCoverage(week: string, siteId?: string, reviewerId?: string) {
   const sc = await getActiveScorecard();
   const rows = await db.execute<{ id: string; name: string; site: string; site_code: string; n: number }>(sql`
     select ${agents.id} as id, ${agents.fullName} as name, ${sites.name} as site, ${sites.code} as site_code,
       (select count(*)::int from ${evaluations} where ${evaluations.agentId} = ${agents.id} and ${evaluations.status} = 'submitted'
-        and ${evaluations.deletedAt} is null and ${evaluations.callWeek} = ${week}) as n
+        and ${evaluations.deletedAt} is null and ${evaluations.callWeek} = ${week}
+        ${reviewerId ? sql`and ${evaluations.reviewerId} = ${reviewerId}` : sql``}) as n
     from ${agents} join ${sites} on ${sites.id} = ${agents.siteId}
     where ${agents.status} = 'active' ${siteId ? sql`and ${agents.siteId} = ${siteId}` : sql``}
+      ${
+        reviewerId
+          ? sql`and (
+              exists (select 1 from ${reviewerSiteAssignments} rsa where rsa.reviewer_id = ${reviewerId} and rsa.site_id = ${agents.siteId})
+              or exists (select 1 from ${reviewerAgentAssignments} raa where raa.reviewer_id = ${reviewerId} and raa.agent_id = ${agents.id})
+            )`
+          : sql``
+      }
     order by n asc, ${agents.fullName}`);
   const target = sc.settings.weeklyTarget;
   const met = rows.filter((r) => r.n >= target).length;

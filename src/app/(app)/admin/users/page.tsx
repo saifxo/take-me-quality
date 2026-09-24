@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { requireAdmin } from "@/server/auth/dal";
 import { listUsers } from "@/server/services/users";
+import { listAgents, listSites } from "@/server/services/roster";
+import { listReviewerAssignments } from "@/server/services/assignments";
 import { relativeTime } from "@/lib/dates";
 import { initials } from "@/lib/utils";
 import { Badge, Card, PageHeader, TableWrap, td, th } from "@/components/ui/surface";
@@ -10,7 +12,12 @@ export const metadata: Metadata = { title: "Users" };
 
 export default async function UsersPage() {
   const me = await requireAdmin();
-  const users = await listUsers(me);
+  const [users, sites, agents, assignments] = await Promise.all([
+    listUsers(me),
+    listSites({ activeOnly: true }),
+    listAgents(),
+    listReviewerAssignments(me),
+  ]);
   return (
     <>
       <PageHeader
@@ -55,7 +62,20 @@ export default async function UsersPage() {
                   <td className={`${td} text-right tabular`}>{u.reviews}</td>
                   <td className={`${td} text-[13px] text-ink-2`}>{u.lastLoginAt ? relativeTime(u.lastLoginAt) : "Never"}</td>
                   <td className={`${td} text-right`}>
-                    <UserRowActions user={{ id: u.id, name: u.name, role: u.role, status: u.status }} isSelf={u.id === me.id} />
+                    <UserRowActions
+                      user={{ id: u.id, name: u.name, role: u.role, status: u.status }}
+                      isSelf={u.id === me.id}
+                      assignmentOptions={
+                        u.role === "qa"
+                          ? {
+                              sites: sites.map((s) => ({ id: s.id, name: s.name, code: s.code })),
+                              agents: agents.map((a) => ({ id: a.id, fullName: a.fullName, siteId: a.siteId, siteCode: a.siteCode })),
+                              siteIds: assignments.sites.filter((a) => a.reviewerId === u.id).map((a) => a.siteId),
+                              agentIds: assignments.agents.filter((a) => a.reviewerId === u.id).map((a) => a.agentId),
+                            }
+                          : undefined
+                      }
+                    />
                   </td>
                 </tr>
               ))}

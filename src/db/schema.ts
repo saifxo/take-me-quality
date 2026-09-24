@@ -117,6 +117,36 @@ export const agents = pgTable(
   (t) => [index("agents_site_idx").on(t.siteId), index("agents_name_idx").on(t.fullName)],
 );
 
+/** A site assignment includes every current and future agent at that site. */
+export const reviewerSiteAssignments = pgTable(
+  "reviewer_site_assignments",
+  {
+    reviewerId: uuid("reviewer_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    siteId: uuid("site_id")
+      .notNull()
+      .references(() => sites.id, { onDelete: "cascade" }),
+    createdAt: ts("created_at").notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.reviewerId, t.siteId] }), index("reviewer_site_assignments_site_idx").on(t.siteId)],
+);
+
+/** Individual assignments supplement any sites assigned to the reviewer. */
+export const reviewerAgentAssignments = pgTable(
+  "reviewer_agent_assignments",
+  {
+    reviewerId: uuid("reviewer_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    agentId: uuid("agent_id")
+      .notNull()
+      .references(() => agents.id, { onDelete: "cascade" }),
+    createdAt: ts("created_at").notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.reviewerId, t.agentId] }), index("reviewer_agent_assignments_agent_idx").on(t.agentId)],
+);
+
 // ---------------------------------------------------------------- scorecard (versioned rules)
 export type ScorecardSettings = {
   /** A score must be strictly above this to meet KPI (the sheet: > 90%). */
@@ -343,12 +373,25 @@ export const auditLog = pgTable(
 );
 
 // ---------------------------------------------------------------- relations (for db.query)
-export const usersRelations = relations(users, ({ many }) => ({ sessions: many(sessions) }));
+export const usersRelations = relations(users, ({ many }) => ({
+  sessions: many(sessions),
+  siteAssignments: many(reviewerSiteAssignments),
+  agentAssignments: many(reviewerAgentAssignments),
+}));
 export const sessionsRelations = relations(sessions, ({ one }) => ({ user: one(users, { fields: [sessions.userId], references: [users.id] }) }));
-export const sitesRelations = relations(sites, ({ many }) => ({ agents: many(agents) }));
+export const sitesRelations = relations(sites, ({ many }) => ({ agents: many(agents), reviewerAssignments: many(reviewerSiteAssignments) }));
 export const agentsRelations = relations(agents, ({ one, many }) => ({
   site: one(sites, { fields: [agents.siteId], references: [sites.id] }),
   evaluations: many(evaluations),
+  reviewerAssignments: many(reviewerAgentAssignments),
+}));
+export const reviewerSiteAssignmentsRelations = relations(reviewerSiteAssignments, ({ one }) => ({
+  reviewer: one(users, { fields: [reviewerSiteAssignments.reviewerId], references: [users.id] }),
+  site: one(sites, { fields: [reviewerSiteAssignments.siteId], references: [sites.id] }),
+}));
+export const reviewerAgentAssignmentsRelations = relations(reviewerAgentAssignments, ({ one }) => ({
+  reviewer: one(users, { fields: [reviewerAgentAssignments.reviewerId], references: [users.id] }),
+  agent: one(agents, { fields: [reviewerAgentAssignments.agentId], references: [agents.id] }),
 }));
 export const versionsRelations = relations(scorecardVersions, ({ many }) => ({
   sections: many(sections),

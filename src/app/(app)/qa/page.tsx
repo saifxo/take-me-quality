@@ -20,7 +20,11 @@ function greeting() {
 export default async function TodayPage() {
   const user = await requireUser();
   const week = currentWeekStart();
-  const [queue, mine, coverage] = await Promise.all([listMyQueue(user), reviewerWeek(user.id, week), weeklyCoverage(week)]);
+  const [queue, mine, coverage] = await Promise.all([
+    listMyQueue(user),
+    reviewerWeek(user.id, week),
+    weeklyCoverage(week, undefined, user.role === "qa" ? user.id : undefined),
+  ]);
   const maxDay = Math.max(1, ...mine.days.map((d) => d.count));
   const behind = coverage.agents.filter((a) => a.reviews < coverage.target);
   const lp = londonParts(new Date());
@@ -102,7 +106,10 @@ export default async function TodayPage() {
 
         <div className="grid content-start gap-6">
           <Card>
-            <CardHeader title="Who still needs calls this week" description={`${behind.length} of ${coverage.total} agents are below ${coverage.target} reviews`} />
+            <CardHeader
+              title="Who still needs calls this week"
+              description={coverage.total ? `${behind.length} of ${coverage.total} assigned agents are below ${coverage.target} reviews` : "Your admin controls which agents appear here"}
+            />
             <ul className="grid gap-3 px-5 pb-5">
               {behind.slice(0, 8).map((a) => (
                 <li key={a.id}>
@@ -117,7 +124,9 @@ export default async function TodayPage() {
                   </div>
                 </li>
               ))}
-              {behind.length === 0 ? <li className="text-[14px] text-muted">Every active agent has reached this week’s target.</li> : null}
+              {behind.length === 0 ? (
+                <li className="text-[14px] text-muted">{coverage.total ? "Every assigned agent has reached this week’s target." : "No agents are assigned to you yet."}</li>
+              ) : null}
               {behind.length > 8 ? <li className="text-[13px] text-muted">…and {behind.length - 8} more</li> : null}
             </ul>
           </Card>

@@ -7,9 +7,10 @@ import { NewCall } from "./new-call";
 export const metadata: Metadata = { title: "Score a call" };
 
 export default async function NewCallPage(props: PageProps<"/qa/new">) {
-  await requireUser();
+  const user = await requireUser();
   const sp = await props.searchParams;
-  const [agents, sites] = await Promise.all([listAgents(), listSites({ activeOnly: true })]);
+  const reviewerId = user.role === "qa" ? user.id : undefined;
+  const [agents, sites] = await Promise.all([listAgents({ reviewerId }), listSites({ activeOnly: true, reviewerId })]);
   return (
     <>
       <PageHeader

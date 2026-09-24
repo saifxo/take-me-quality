@@ -20,6 +20,7 @@ import { audit, type Actor } from "@/server/audit";
 import { forbidden, invalid, notFound } from "@/server/errors";
 import { engineCriteria, engineSettings, getActiveScorecard, getScorecard, type Scorecard } from "./scorecard";
 import { createAgent, matchPortalNames } from "./roster";
+import { assertCanReviewAgent } from "./assignments";
 
 export type AnswerInput = { answer: Answer; note?: string | null; atTime?: string | null };
 export type ReviewPayload = {
@@ -80,10 +81,12 @@ async function findDuplicates(rows: { callAt: Date; agentId: string | null; call
 
 /** Server-side preview: parse, match agents to the roster, flag calls already reviewed. */
 export async function previewPaste(actor: Actor, text: string): Promise<PastePreviewRow[]> {
-  void actor;
   const parsed = parsePortalText(text);
   const okRows = parsed.filter((r): r is ParsedCall => r.ok);
-  const matches = await matchPortalNames(okRows.map((r) => ({ agentName: r.agentName, siteCode: r.siteCode })));
+  const matches = await matchPortalNames(
+    okRows.map((r) => ({ agentName: r.agentName, siteCode: r.siteCode })),
+    actor.role === "qa" ? actor.id : undefined,
+  );
   const dupes = await findDuplicates(
     okRows.map((r, i) => ({
       callAt: new Date(r.callAt),
@@ -166,6 +169,7 @@ export async function queueFromPaste(actor: Actor, text: string, choices: Record
       skipped.push({ index: row.index, reason: "That agent no longer exists" });
       continue;
     }
+    await assertCanReviewAgent(actor, agent);
 
     const callAt = new Date(row.callAt);
     const [ev] = await db
@@ -209,6 +213,7 @@ export async function createManual(actor: Actor, input: ManualCallInput) {
   const scorecard = await getActiveScorecard();
   const [agent] = await db.select({ id: agents.id, siteId: agents.siteId }).from(agents).where(eq(agents.id, input.agentId)).limit(1);
   if (!agent) throw notFound("Pick an agent from the roster.");
+  await assertCanReviewAgent(actor, agent);
   if (input.callAt.getTime() > Date.now() + 5 * 60_000) throw invalid("The call time is in the future.");
   const anonymous = isAnonymousCaller(input.caller);
   const normalised = anonymous ? null : normalizeUkPhone(input.caller);
